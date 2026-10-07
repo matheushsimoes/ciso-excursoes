@@ -1,0 +1,24 @@
+Person
+  │
+  │
+  ▼
+Participation ────────────────────── Excursion
+  │                                     │
+  │                                     ├── ExcursionBus ── BusType
+  │                                     │
+  │                                     ├── ExcursionHotel ── Hotel
+  │                                     │                       │
+  │                                     │                       └── Room
+  │                                     │
+  │                                     └── Activity
+  │                                             │
+  │                                             └── TicketType
+  │                                                    │
+  ├──────────────────────────────────────────────────► TicketPurchase
+  │
+  └──────────────────────────────────────────────────► Payment
+                                                        │
+                                                        └── Refund
+
+
+TicketPurchase ─────────────── Supplier

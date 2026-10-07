@@ -1,301 +1,279 @@
-# Decisões de Domínio — Ciso Excursões
+# Domain Decisions
 
-## 1. Objetivo
-
-Este documento registra decisões tomadas durante a modelagem do domínio do Ciso Excursões.
-
-Seu objetivo é preservar o raciocínio utilizado para representar conceitos do negócio.
-
-As decisões aqui registradas complementam:
-
-* `docs/requirements/business-rules.md`
-* `docs/requirements/use-cases.md`
-* `docs/domain/domain-model.md`
+Este documento registra decisões importantes de modelagem do domínio da Ciso Excursões.
 
 ---
 
-# 2. Status da Excursão
+## DD01 — Status da excursão
+
+Uma excursão possui os seguintes estados:
+
+* `DRAFT`
+* `OPEN`
+* `CONFIRMED`
+* `IN_PROGRESS`
+* `FINISHED`
+* `CANCELLED`
+
+A máquina de estados poderá ser refinada conforme os fluxos da aplicação forem implementados.
+
+---
+
+## DD02 — Status da participação
+
+Uma participação possui inicialmente:
+
+* `ACTIVE`
+* `CANCELLED`
+
+Cancelamentos não excluem registros históricos.
+
+---
+
+## DD03 — Status da compra de ingresso
+
+Uma compra de ingresso possui inicialmente:
+
+* `REQUESTED`
+* `CONFIRMED`
+
+---
+
+## DD04 — Separação entre compra do passageiro e aquisição do fornecedor
+
+`TicketPurchase` e `TicketSupplierPurchase` são entidades distintas.
+
+`TicketPurchase` representa a relação comercial entre Ciso e passageiro.
+
+`TicketSupplierPurchase` representa a relação comercial entre Ciso e fornecedor.
+
+Essa separação é necessária porque preços, quantidades e momentos de aquisição podem ser diferentes.
+
+---
+
+## DD05 — Fornecedor
+
+Foi criada a entidade `Supplier` para representar fornecedores relacionados às compras de ingressos.
+
+A entidade poderá futuramente ser reutilizada para outros fornecedores, como hotéis ou empresas de transporte, caso isso seja necessário.
+
+Não serão criadas entidades específicas de fornecedor para cada categoria neste momento.
+
+---
+
+## DD06 — Preço atual versus preço histórico
+
+O preço atual de uma entidade não deve ser utilizado para reconstruir transações históricas.
+
+Por isso:
+
+* `Excursion.reference_price` representa o preço de referência atual da excursão;
+* `Participation.contracted_amount` representa o valor efetivamente contratado pelo participante;
+* `TicketType.current_price` representa o preço atual do tipo de ingresso;
+* `TicketPurchase.sold_price` representa o preço efetivamente vendido ao participante.
+
+Os valores históricos devem ser armazenados na própria transação.
+
+---
+
+## DD07 — Reembolso
+
+Reembolso será representado como uma entidade própria (`Refund`) relacionada ao pagamento original.
+
+Isso permite preservar o histórico financeiro.
+
+O pagamento original não deve ser alterado ou excluído para representar um reembolso.
+
+---
+
+## DD08 — Crédito
+
+Crédito decorrente de cancelamento não será modelado como entidade própria no MVP.
+
+A decisão poderá ser revisada quando o fluxo financeiro de créditos for implementado.
+
+---
+
+# DD09 — Transporte: tipo, quantidade e unidade operacional
+
+## Contexto
+
+Uma excursão pode utilizar várias unidades do mesmo tipo de ônibus.
+
+Exemplo:
+
+> 2 ônibus Double-Deck Style com 64 lugares.
+
+Não existe necessidade de criar dois registros diferentes para representar essas duas unidades.
+
+Ao mesmo tempo, a operação precisa identificar cada ônibus individualmente para controlar os passageiros e os assentos.
 
 ## Decisão
 
-A excursão possuirá inicialmente os seguintes estados:
+O transporte será dividido em três níveis:
 
 ```text
-DRAFT
-OPEN
-CONFIRMED
-IN_PROGRESS
-FINISHED
-CANCELLED
+BusType
+    │
+    ▼
+ExcursionBus
+    │
+    ▼
+ExcursionVehicle
 ```
 
-## Significado
+### BusType
 
-### DRAFT
+Representa o tipo/configuração de ônibus.
 
-A excursão está sendo planejada e ainda não está disponível para operação comercial.
+Exemplo:
 
-### OPEN
+```text
+Double-Deck Style
+64 lugares
+```
 
-A excursão está aberta para receber participantes.
+### ExcursionBus
 
-### CONFIRMED
+Representa a quantidade contratada daquele tipo para uma excursão.
 
-A excursão foi confirmada operacionalmente.
+Exemplo:
 
-### IN_PROGRESS
+```text
+Double-Deck Style
+quantity = 2
+```
 
-A excursão está acontecendo.
+Deve existir no máximo um `ExcursionBus` para cada combinação de:
 
-### FINISHED
+```text
+excursion + bus_type
+```
 
-A excursão foi concluída.
+### ExcursionVehicle
 
-### CANCELLED
+Representa cada unidade individual utilizada operacionalmente.
 
-A excursão foi cancelada.
+Exemplo:
+
+```text
+Ônibus 1
+Ônibus 2
+```
+
+A participação será relacionada ao `ExcursionVehicle`, pois a alocação de passageiros e assentos precisa identificar o ônibus específico.
 
 ## Motivo
 
-O modelo precisa representar o ciclo de vida operacional da excursão sem criar estados excessivamente específicos.
+Essa abordagem evita duplicação conceitual e mantém o nível de detalhe necessário para a operação.
+
+O sistema consegue representar:
+
+```text
+2 × Double-Deck 64 lugares
+```
+
+e, simultaneamente:
+
+```text
+Ônibus 1 → passageiros e assentos
+Ônibus 2 → passageiros e assentos
+```
+
+## Consequências
+
+`ExcursionBus.quantity` representa a quantidade contratada/configurada.
+
+`ExcursionVehicle` representa as unidades individuais disponíveis para operação.
+
+O MVP não controlará informações de frota física como:
+
+* placa;
+* chassi;
+* proprietário;
+* empresa transportadora;
+* documentação.
 
 ---
 
-# 3. Status da Participação
+## DD10 — Assento
 
-## Decisão
+Não será criada uma entidade independente para assentos no MVP.
 
-A participação possuirá inicialmente apenas:
+O assento será representado por:
 
 ```text
-ACTIVE
-CANCELLED
+ExcursionVehicle + seat_number
 ```
 
-## Motivo
+Isso permite que o mesmo número exista em veículos diferentes.
 
-Situações como:
+Exemplo:
 
-* sem assento;
-* sem pagamento completo;
-* sem acomodação temporariamente;
+```text
+Ônibus 1 → assento 23
+Ônibus 2 → assento 23
+```
 
-não representam necessariamente estados da participação.
+São posições distintas.
 
-São condições independentes que podem ser consultadas diretamente.
-
-Isso evita criar uma máquina de estados complexa.
+Uma entidade `Seat` poderá ser introduzida futuramente caso seja necessário controlar layouts físicos dos veículos.
 
 ---
 
-# 4. Status da Compra de Ingresso
+## DD11 — Grupo de viagem
 
-## Decisão
+Não será criada uma entidade `TravelGroup` inicialmente.
 
-A compra de ingresso realizada pelo participante possuirá inicialmente:
+Famílias e amigos poderão ser organizados operacionalmente sem necessidade de uma entidade própria.
 
-```text
-REQUESTED
-CONFIRMED
-```
-
-## Motivo
-
-A solicitação do participante e a confirmação da operação podem ocorrer em momentos diferentes.
-
-A regra atual não permite cancelamento após a confirmação da compra.
+A necessidade poderá ser revisada quando forem implementados recursos específicos para grupos.
 
 ---
 
-# 5. Separação entre compra do participante e compra do fornecedor
+## DD12 — Custos versus preços comerciais
 
-## Decisão
-
-Serão tratados como conceitos diferentes:
-
-```text
-TicketPurchase
-```
-
-representa o ingresso adquirido pelo participante.
-
-Enquanto:
-
-```text
-TicketSupplierPurchase
-```
-
-representa a compra realizada pela Ciso junto ao fornecedor.
-
-## Motivo
-
-As duas operações possuem objetivos financeiros diferentes.
-
-### Compra do participante
-
-Representa:
-
-> Quanto o passageiro pagará à Ciso.
-
-### Compra do fornecedor
-
-Representa:
-
-> Quanto a Ciso precisa pagar ao fornecedor.
-
-Essa separação permite calcular demanda, custos e margem.
-
----
-
-# 6. Fornecedor
-
-## Decisão
-
-Será criado o conceito `Supplier`.
-
-Um fornecedor poderá estar relacionado a diferentes operações do negócio.
+Custos internos da Ciso não devem ser confundidos com preços cobrados dos passageiros.
 
 Exemplos:
 
-* empresa de transporte;
-* hotel;
-* fornecedor de ingressos;
-* outros fornecedores.
+* custo do quarto → `Room.cost`;
+* valor do pacote → `Participation.contracted_amount`;
+* preço de ingresso ao passageiro → `TicketPurchase.sold_price`;
+* custo de ingresso para a Ciso → `TicketSupplierPurchase`.
 
-## Motivo
-
-A operação financeira da excursão precisa identificar quem fornece determinados serviços ou produtos.
-
-O cadastro será inicialmente simples e poderá evoluir conforme novas necessidades aparecerem.
+Essa separação é importante para o fechamento financeiro da excursão.
 
 ---
 
-# 7. Preço atual versus preço contratado
+## DD13 — Valores monetários
 
-## Decisão
-
-O sistema deve diferenciar preço atual de preço histórico contratado.
-
-### Excursão
+Valores monetários serão armazenados utilizando:
 
 ```text
-Excursion.referencePrice
+NUMERIC(12,2)
 ```
 
-representa o valor de referência atual da excursão.
+Não será utilizado `FLOAT` para valores financeiros.
+
+---
+
+## DD14 — Status
+
+Inicialmente, os status serão representados como `VARCHAR` com `CHECK`.
+
+Não serão utilizados PostgreSQL `ENUM` neste momento.
+
+Motivo: facilitar evolução do domínio sem necessidade de alterar tipos ENUM do banco sempre que novos estados forem necessários.
+
+---
+
+## DD15 — Timestamps
+
+Datas e horários de auditoria utilizarão:
 
 ```text
-Participation.contractedAmount
+TIMESTAMPTZ
 ```
 
-representa o valor efetivamente contratado por aquele participante.
-
-### Ingresso
-
-```text
-TicketType.currentPrice
-```
-
-representa o preço atual do ingresso.
-
-```text
-TicketPurchase.soldPrice
-```
-
-representa o preço efetivamente vendido ao participante.
-
-## Motivo
-
-Alterações futuras nos preços não podem alterar contratos já realizados.
-
----
-
-# 8. Reembolso
-
-## Decisão
-
-Reembolsos serão representados como registros independentes associados aos pagamentos originais.
-
-O pagamento original não será alterado ou excluído para representar um reembolso.
-
-### Exemplo
-
-```text
-Payment
-R$ 2.000
-
-Refund
-R$ 700
-```
-
-O histórico financeiro permanece preservado.
-
-## Motivo
-
-Isso permite rastreabilidade financeira e evita perda de histórico.
-
----
-
-# 9. Crédito
-
-## Decisão
-
-O conceito de crédito não fará parte da primeira versão do modelo.
-
-## Motivo
-
-A necessidade foi identificada, mas as regras comerciais ainda não foram suficientemente detalhadas.
-
-A entidade será criada quando suas regras forem definidas.
-
----
-
-# 10. Assentos
-
-## Decisão
-
-Na primeira versão, assento não será uma entidade independente.
-
-O assento será representado por uma posição dentro do ônibus da excursão.
-
-A participação terá uma referência ao ônibus e ao número do assento.
-
-## Motivo
-
-A necessidade atual é apenas controlar:
-
-* qual ônibus;
-* qual assento;
-* quem está sentado nele.
-
-Caso futuramente seja necessário representar mapas físicos, corredores, poltronas especiais ou configurações diferentes, uma entidade `Seat` poderá ser introduzida.
-
----
-
-# 11. Grupos de passageiros
-
-## Decisão
-
-Não será criada inicialmente uma entidade `TravelGroup`.
-
-## Motivo
-
-Apesar de famílias e amigos normalmente desejarem viajar juntos, ainda não existe uma necessidade funcional suficientemente definida para justificar uma entidade própria.
-
-A necessidade poderá ser revisitada posteriormente.
-
----
-
-# 12. Princípio de evolução
-
-O modelo deve evitar entidades criadas apenas para antecipar necessidades futuras.
-
-Uma nova entidade deve ser introduzida quando existir:
-
-* regra de negócio;
-* comportamento próprio;
-* ciclo de vida;
-* relacionamento relevante;
-* necessidade de consulta ou alteração independente.
-
-A evolução do domínio deve ocorrer conforme as necessidades reais do negócio forem identificadas.
+Campos como `created_at` e `updated_at` devem armazenar informações de data/hora com timezone.

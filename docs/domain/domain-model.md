@@ -1,820 +1,513 @@
-# Modelo de Domínio — Ciso Excursões
+# Domain Model
 
-## 1. Objetivo
+## 1. Visão geral
 
-Este documento define o modelo conceitual do domínio do Ciso Excursões.
+O domínio da Ciso Excursões é organizado em torno da `Excursion`.
 
-O objetivo é identificar os principais conceitos do negócio, suas responsabilidades e seus relacionamentos.
+Uma excursão representa uma viagem específica, em determinado período, para determinado destino.
 
-Este documento precede a modelagem física do banco de dados.
-
-O modelo deve ser derivado das regras de negócio e casos de uso definidos em:
-
-* `docs/requirements/business-rules.md`
-* `docs/requirements/use-cases.md`
-
----
-
-# 2. Princípio fundamental
-
-O sistema não deve ser modelado diretamente a partir das planilhas atualmente utilizadas pela Ciso Excursões.
-
-As planilhas representam a forma atual de operação e controle.
-
-O sistema deve representar os conceitos reais do negócio.
-
----
-
-# 3. Visão geral do domínio
-
-O núcleo do sistema é formado pela relação entre:
+A pessoa é uma entidade independente e sua relação com uma excursão é representada por `Participation`.
 
 ```text
-Pessoa
+Person
    │
-   │ participa de
+   │ 1:N
    ▼
-Participação
+Participation
    │
-   └──────────► Excursão
-```
-
-A `Participação` representa o vínculo entre uma pessoa e uma excursão específica.
-
-A partir da participação são definidos os elementos específicos daquela viagem:
-
-```text
-                    ┌── Pagamentos
-                    │
-                    ├── Acomodação
-Participação ───────┼── Transporte / Assento
-                    │
-                    └── Ingressos
-```
-
-A excursão, por sua vez, concentra a configuração operacional:
-
-```text
-                         ┌── Ônibus
-                         ├── Hotéis / Quartos
-Excursão ────────────────┼── Atividades
-                         └── Despesas
+   │ N:1
+   ▼
+Excursion
 ```
 
 ---
 
-# 4. Entidades principais
+# 2. Person
 
-## 4.1 Pessoa
+`Person` representa uma pessoa cadastrada no sistema.
 
-### Conceito
+A pessoa existe independentemente das excursões das quais participa.
 
-Representa um indivíduo que pode participar de uma ou mais excursões.
+Principais informações:
 
-A pessoa existe independentemente de uma excursão.
-
-### Responsabilidade
-
-Armazenar os dados cadastrais permanentes ou relativamente estáveis do indivíduo.
-
-### Principais atributos
-
-* identificador;
 * nome completo;
 * documento;
 * data de nascimento;
 * telefone;
 * e-mail.
 
-### Relacionamentos
-
-Uma pessoa pode possuir:
-
-```text
-Pessoa 1 ─────── N Participações
-```
+Uma mesma pessoa pode participar de várias excursões.
 
 ---
 
-# 5. Participação
+# 3. Excursion
 
-## 5.1 Conceito
+`Excursion` representa uma excursão específica.
 
-A `Participação` é uma das entidades centrais do domínio.
+Principais informações:
 
-Ela representa a participação de uma pessoa em uma excursão específica.
+* nome;
+* destino;
+* data de início;
+* data de término;
+* preço de referência;
+* status.
 
-Não devemos confundir:
+Uma excursão pode possuir:
 
-```text
-Pessoa
-```
+* participantes;
+* transporte;
+* hotéis;
+* atividades;
+* compras de ingressos;
+* despesas;
+* informações financeiras.
 
-com:
+---
 
-```text
-Participação
-```
+# 4. Participation
 
-A pessoa é o indivíduo.
+`Participation` representa a participação de uma pessoa em uma excursão específica.
 
-A participação representa o contexto daquele indivíduo naquela viagem.
+É onde ficam as informações específicas daquela viagem.
 
-### Exemplo
+Principais informações:
 
-A pessoa:
-
-```text
-Maria Silva
-```
-
-pode possuir:
-
-```text
-Participação
-├── Excursão: Carnaval Rio 2026
-├── Valor contratado: R$ 2.500
-├── Quarto: 203
-├── Ônibus: Double Deck 01
-└── Atividade: Camarote
-```
-
-E posteriormente:
-
-```text
-Participação
-├── Excursão: Aparecida 2027
-├── Valor contratado: R$ 350
-├── Quarto: não aplicável
-└── Transporte: ônibus 01
-```
-
-São duas participações diferentes da mesma pessoa.
-
-### Principais atributos
-
-* identificador;
 * pessoa;
 * excursão;
 * valor contratado;
-* situação;
-* datas relevantes.
+* status;
+* veículo;
+* assento;
+* quarto.
 
-### Relacionamentos
-
-```text
-Pessoa 1 ─────── N Participações
-
-Excursão 1 ───── N Participações
-```
-
-Existe uma restrição:
-
-```text
-Pessoa + Excursão = único
-```
-
-Uma pessoa não pode possuir duas participações na mesma excursão.
+A combinação `person + excursion` deve ser única.
 
 ---
 
-# 6. Excursão
+# 5. Transporte
 
-## 6.1 Conceito
-
-Representa uma viagem organizada pela Ciso Excursões.
-
-### Principais atributos
-
-* identificador;
-* nome;
-* destino;
-* data de saída;
-* data de retorno;
-* valor de referência;
-* situação.
-
-### Relacionamentos
-
-Uma excursão possui:
+O domínio de transporte possui três níveis:
 
 ```text
-Excursão
-├── N Participações
-├── N Ônibus
-├── N Hotéis
-├── N Atividades
-└── N Despesas
+BusType
+   │
+   ▼
+ExcursionBus
+   │
+   ▼
+ExcursionVehicle
+   │
+   ▼
+Participation
 ```
 
----
+Essa separação permite representar corretamente múltiplas unidades do mesmo tipo de ônibus.
 
-# 7. Transporte
+## 5.1 BusType
 
-O domínio de transporte possui dois conceitos diferentes:
+`BusType` representa um tipo ou configuração de ônibus disponível no cadastro.
 
-```text
-Tipo de Ônibus
-       │
-       │ define características
-       ▼
-Ônibus da Excursão
-       │
-       │ recebe
-       ▼
-Assentos / Participações
-```
+Exemplos:
 
-Essa separação existe porque:
+* Double-Deck Style — 64 lugares;
+* Convencional — 46 lugares;
+* Micro-ônibus — 32 lugares.
 
-> "Double Deck 64 lugares" é uma característica/configuração.
+Principais informações:
 
-Enquanto:
-
-> "Double Deck utilizado na excursão Rio 2027" é uma instância específica da operação.
-
----
-
-## 7.1 Tipo de Ônibus
-
-Representa uma configuração ou categoria de veículo.
-
-### Exemplos
-
-* Double Deck — 64 lugares;
-* ônibus convencional — 46 lugares;
-* micro-ônibus — 28 lugares.
-
-### Principais atributos
-
-* identificador;
 * nome;
 * capacidade;
-* características.
+* descrição.
+
+`BusType` não representa um veículo específico utilizado em uma excursão.
 
 ---
 
-## 7.2 Ônibus da Excursão
+## 5.2 ExcursionBus
 
-Representa o ônibus efetivamente disponibilizado para uma excursão.
-
-### Relacionamentos
-
-```text
-Tipo de Ônibus 1 ───── N Ônibus da Excursão
-
-Excursão 1 ───── N Ônibus da Excursão
-```
-
-O ônibus da excursão pode possuir passageiros alocados.
-
----
-
-## 7.3 Assento
-
-No modelo inicial, não será criada necessariamente uma entidade independente `Assento`.
-
-O assento pode ser representado como uma posição dentro do ônibus da excursão.
+`ExcursionBus` representa a contratação de uma quantidade de determinado `BusType` para uma excursão.
 
 Exemplo:
 
 ```text
-Ônibus 01
-├── Assento 01 → João
-├── Assento 02 → Maria
-├── Assento 03 → disponível
-└── ...
+Excursão Rio 2027
+    └── Double-Deck Style
+        └── quantity = 2
 ```
 
-A participação possuirá a informação do assento atribuído.
+Uma excursão não deve possuir dois registros de `ExcursionBus` para o mesmo `BusType`.
 
-### Restrição
-
-Não pode existir:
-
-```text
-Ônibus 01 + Assento 15
-```
-
-atribuído simultaneamente a duas participações ativas.
-
-### Evolução futura
-
-Caso o mapa físico dos ônibus exija maior complexidade, poderemos criar uma entidade específica `Assento`.
+A quantidade deve ser representada pelo campo `quantity`.
 
 ---
 
-# 8. Hospedagem
+## 5.3 ExcursionVehicle
 
-A hospedagem possui três conceitos principais:
+`ExcursionVehicle` representa cada unidade individual utilizada operacionalmente dentro da excursão.
+
+Exemplo:
 
 ```text
-Hotel
-  │
-  ▼
-Hotel na Excursão
-  │
-  ▼
-Quarto
-  │
-  ▼
-Participação
+ExcursionBus
+Double-Deck Style
+quantity = 2
+
+    ├── ExcursionVehicle
+    │   identifier = "Ônibus 1"
+    │
+    └── ExcursionVehicle
+        identifier = "Ônibus 2"
 ```
+
+A existência de `ExcursionVehicle` é necessária porque os passageiros precisam ser alocados a um ônibus específico.
 
 ---
 
-## 8.1 Hotel
+## 5.4 Alocação de passageiros
 
-Representa um estabelecimento de hospedagem.
-
-### Responsabilidade
-
-Armazenar informações reutilizáveis sobre o hotel.
-
-### Relacionamentos
-
-Um hotel pode participar de diversas excursões.
+A `Participation` possui uma referência opcional para `ExcursionVehicle`.
 
 ```text
-Hotel 1 ───── N Configurações de hospedagem
+Participation
+    │
+    └── ExcursionVehicle
+            │
+            └── seat_number
 ```
+
+O número do assento não será uma entidade independente no MVP.
+
+O assento é representado pela combinação:
+
+```text
+ExcursionVehicle + seat_number
+```
+
+Dois participantes não podem ocupar a mesma combinação quando estiverem ativos.
+
+O mesmo número de assento pode existir em veículos diferentes.
 
 ---
 
-## 8.2 Hotel na Excursão
+# 6. Hospedagem
 
-Representa a utilização de determinado hotel em uma excursão específica.
+## 6.1 Hotel
 
-Essa separação é importante porque as condições comerciais podem mudar entre excursões.
+`Hotel` representa um hotel cadastrado no sistema.
 
-### Exemplos
-
-O mesmo hotel pode:
-
-```text
-Carnaval 2026
-→ custo negociado A
-
-Carnaval 2027
-→ custo negociado B
-```
-
-### Relacionamentos
-
-```text
-Excursão 1 ───── N Hotéis utilizados
-
-Hotel 1 ───── N Excursões
-```
+Uma excursão pode utilizar vários hotéis.
 
 ---
 
-## 8.3 Quarto
+## 6.2 ExcursionHotel
 
-Representa uma unidade de acomodação disponibilizada para a excursão.
+`ExcursionHotel` representa a utilização de um hotel específico em uma excursão.
 
-### Principais atributos
+Essa entidade permite que as condições do hotel sejam específicas para determinada excursão.
 
-* identificador;
-* identificação do quarto;
-* tipo;
+---
+
+## 6.3 Room
+
+`Room` representa um quarto dentro da configuração de hospedagem da excursão.
+
+Principais informações:
+
+* identificação;
 * capacidade;
-* custo operacional.
+* custo.
 
-### Relacionamentos
+O custo representa o valor pago pela Ciso ao hotel.
 
-Um quarto pertence à configuração de hospedagem de uma excursão.
-
-```text
-Hotel na Excursão 1 ───── N Quartos
-```
-
-Um quarto pode possuir várias participações, respeitando sua capacidade.
-
-```text
-Quarto 1 ───── N Participações
-```
+Não representa o valor pago individualmente pelo passageiro.
 
 ---
 
-# 9. Atividades
+## 6.4 Acomodação
 
-## 9.1 Atividade
+A `Participation` possui uma referência para o quarto.
 
-Representa uma atividade opcional ou gratuita oferecida durante uma excursão.
+Uma participação pode estar em apenas um quarto dentro da excursão.
 
-### Exemplos
+O sistema deve garantir que a capacidade do quarto não seja ultrapassada.
 
-* escola de samba;
+---
+
+# 7. Atividades e ingressos
+
+## 7.1 Activity
+
+`Activity` representa uma atividade oferecida durante uma excursão.
+
+Exemplos:
+
+* evento de escola de samba;
 * Cristo Redentor;
-* passeio;
-* evento;
-* atração turística.
+* passeio turístico;
+* ponto turístico.
 
-### Relacionamentos
+Uma atividade pode ser gratuita ou possuir ingressos pagos.
 
-```text
-Excursão 1 ───── N Atividades
-```
-
-Uma atividade pertence a uma excursão específica.
+As atividades podem ser adicionadas ou alteradas mesmo depois de a excursão ter sido aberta.
 
 ---
 
-# 10. Tipos de ingresso
+## 7.2 TicketType
 
-## 10.1 Tipo de Ingresso
+`TicketType` representa uma modalidade de ingresso de uma atividade.
 
-Representa uma modalidade de ingresso disponível para determinada atividade.
+Exemplos:
 
-### Exemplo
+* Pista;
+* Camarote;
+* Arquibancada;
+* Inteira;
+* Meia-entrada.
 
-```text
-Atividade: Evento X
+Uma atividade pode possuir vários tipos de ingresso.
 
-Tipos:
-├── Pista — R$ 150
-├── Camarote — R$ 300
-└── Área VIP — R$ 450
-```
-
-### Relacionamento
-
-```text
-Atividade 1 ───── N Tipos de Ingresso
-```
-
-O preço atual do tipo de ingresso pode mudar.
-
-Entretanto, essa alteração não pode modificar compras já realizadas.
+Cada tipo possui seu preço atual.
 
 ---
 
-# 11. Compra de ingresso do participante
+## 7.3 TicketPurchase
 
-## 11.1 Compra de Ingresso
+`TicketPurchase` representa a compra de um ingresso por um participante.
 
-Representa a aquisição de um ingresso por uma participação.
+A compra deve armazenar o preço efetivamente vendido ao participante.
 
-É importante separar:
+Esse preço é um snapshot histórico.
 
-```text
-Tipo de Ingresso
-```
+Alterações posteriores no preço atual de `TicketType` não alteram compras já realizadas.
 
-de:
+Uma participação pode possuir vários ingressos de atividades diferentes.
 
-```text
-Compra de Ingresso
-```
-
-Porque o tipo de ingresso representa a oferta atual.
-
-A compra representa aquilo que foi efetivamente contratado pelo participante.
-
-### Exemplo
-
-Hoje:
-
-```text
-Camarote
-Preço atual: R$ 300
-```
-
-João compra:
-
-```text
-Compra
-Preço vendido: R$ 300
-```
-
-Posteriormente:
-
-```text
-Camarote
-Preço atual: R$ 350
-```
-
-A compra de João continua:
-
-```text
-Preço vendido: R$ 300
-```
-
-### Relacionamentos
-
-```text
-Participação 1 ───── N Compras de Ingresso
-
-Atividade 1 ───── N Compras de Ingresso
-
-Tipo de Ingresso 1 ───── N Compras de Ingresso
-```
-
-### Restrição
-
-Uma participação pode possuir no máximo uma compra para determinada atividade.
+Para uma mesma atividade, uma participação pode possuir no máximo um tipo de ingresso.
 
 ---
 
-# 12. Compra de ingressos com fornecedor
+# 8. Fornecedores e aquisição de ingressos
 
-O sistema também precisa representar a operação inversa:
+## 8.1 Supplier
 
-```text
-Participantes
-      ↓
-Demanda
-      ↓
-Quantidade necessária
-      ↓
-Compra com fornecedor
-```
+`Supplier` representa um fornecedor da Ciso.
 
-Essa operação é diferente da compra realizada pelo participante.
-
-Portanto, futuramente teremos um conceito separado para representar a aquisição dos ingressos pelo responsável da excursão.
-
-### Conceito inicial
-
-`Compra de Ingressos do Fornecedor`
-
-Esse conceito deverá permitir controlar:
-
-* atividade;
-* tipo de ingresso;
-* quantidade necessária;
-* quantidade adquirida;
-* custo unitário;
-* custo total;
-* fornecedor;
-* data da compra.
-
-O nome definitivo da entidade será definido durante o modelo financeiro.
+No contexto de ingressos, pode representar, por exemplo, a empresa ou contato responsável pela venda dos ingressos de uma atividade.
 
 ---
 
-# 13. Pagamento
+## 8.2 TicketSupplierPurchase
 
-## 13.1 Conceito
+`TicketSupplierPurchase` representa a aquisição de ingressos pela Ciso junto ao fornecedor.
 
-Representa um valor efetivamente pago por um participante.
+Essa entidade é separada de `TicketPurchase`.
 
-Um pagamento sempre precisa indicar sua finalidade.
-
-### Finalidades atuais
+A separação é importante porque existem dois fluxos diferentes:
 
 ```text
-Pagamento
-├── Pacote da excursão
-└── Ingresso específico
+Participante
+     │
+     ▼
+TicketPurchase
+     │
+     │
+     ▼
+Ciso
+     │
+     ▼
+TicketSupplierPurchase
+     │
+     ▼
+Supplier
 ```
 
-### Principais atributos
+`TicketPurchase` representa quanto e por quanto o passageiro comprou.
 
-* identificador;
+`TicketSupplierPurchase` representa quanto e por quanto a Ciso adquiriu do fornecedor.
+
+---
+
+# 9. Pagamentos
+
+`Payment` representa um pagamento realizado por um participante.
+
+Um pagamento possui:
+
 * data;
 * valor;
-* método;
+* forma de pagamento;
 * finalidade.
 
-### Relacionamentos
+A finalidade pode estar relacionada ao pacote da excursão ou a uma compra específica de ingresso.
 
-Todo pagamento pertence a uma participação.
+Os pagamentos de ingressos são independentes dos pagamentos do pacote.
 
-Um pagamento destinado a ingresso também deve identificar a compra de ingresso correspondente.
-
----
-
-# 14. Reembolso
-
-## 14.1 Conceito
-
-Representa um valor devolvido ao participante.
-
-O reembolso não deve apagar o pagamento original.
-
-Exemplo:
-
-```text
-Pagamento
-R$ 1.000
-
-Reembolso
-R$ 700
-```
-
-O histórico permanece:
-
-```text
-Pagamento original: R$ 1.000
-Reembolso: R$ 700
-```
-
-Isso permite preservar a rastreabilidade financeira.
+O saldo devedor é calculado a partir dos valores devidos e dos pagamentos realizados.
 
 ---
 
-# 15. Despesa
+# 10. Reembolsos
 
-## 15.1 Conceito
+`Refund` representa um reembolso associado a um pagamento.
 
-Representa um custo relacionado à realização de uma excursão.
+Um pagamento pode possuir um ou mais registros de reembolso.
 
-### Exemplos
+A soma dos reembolsos não pode ultrapassar o valor original do pagamento.
 
-* hotel;
+---
+
+# 11. Despesas
+
+`Expense` representa uma despesa operacional da excursão.
+
+Exemplos:
+
 * transporte;
+* hotel;
+* ingressos;
 * alimentação;
 * brindes;
 * seguro;
-* ingressos;
-* outros custos.
+* outras despesas.
 
-### Relacionamento
+Toda despesa pertence a uma excursão.
+
+---
+
+# 12. Relacionamentos principais
 
 ```text
-Excursão 1 ───── N Despesas
+Person
+  │
+  │ 1:N
+  ▼
+Participation
+  │
+  ├─────────────── N:1 ───────────────► Excursion
+  │
+  ├─────────────── N:1 ───────────────► ExcursionVehicle
+  │
+  ├─────────────── N:1 ───────────────► Room
+  │
+  ├─────────────── 1:N ───────────────► TicketPurchase
+  │
+  └─────────────── 1:N ───────────────► Payment
+
+
+Excursion
+  │
+  ├── 1:N ──► Participation
+  │
+  ├── 1:N ──► ExcursionBus
+  │             │
+  │             └── N:1 ──► BusType
+  │             │
+  │             └── 1:N ──► ExcursionVehicle
+  │
+  ├── 1:N ──► ExcursionHotel
+  │             │
+  │             └── N:1 ──► Hotel
+  │                         │
+  │                         └── 1:N ──► Room
+  │
+  ├── 1:N ──► Activity
+  │             │
+  │             └── 1:N ──► TicketType
+  │
+  ├── 1:N ──► TicketSupplierPurchase
+  │
+  └── 1:N ──► Expense
+
+
+TicketType
+  │
+  └── 1:N ──► TicketPurchase
+
+
+Supplier
+  │
+  └── 1:N ──► TicketSupplierPurchase
+
+
+Payment
+  │
+  └── 1:N ──► Refund
 ```
-
-### Principais atributos
-
-* identificador;
-* categoria;
-* descrição;
-* valor;
-* data.
 
 ---
 
-# 16. Relacionamentos principais
+# 13. Integridade
 
-O modelo conceitual pode ser resumido da seguinte maneira:
+As principais regras de integridade são:
+
+### Banco de dados
+
+* `Person.document` deve ser único.
+* `Participation(person_id, excursion_id)` deve ser único.
+* `ExcursionBus(excursion_id, bus_type_id)` deve ser único.
+* `ExcursionVehicle` deve pertencer a um `ExcursionBus`.
+* `seat_number` somente pode existir quando houver `ExcursionVehicle`.
+* não pode haver assento duplicado para participantes ativos no mesmo veículo;
+* `Activity` deve pertencer a uma excursão;
+* `TicketType` deve pertencer a uma atividade;
+* `Payment.amount` deve ser maior que zero;
+* `Expense` deve pertencer a uma excursão;
+* valores monetários devem utilizar `NUMERIC(12,2)`.
+
+### Aplicação
+
+Inicialmente serão responsabilidade da aplicação:
+
+* validar capacidade do ônibus;
+* validar capacidade do quarto;
+* validar que veículo e quarto pertencem à mesma excursão da participação;
+* garantir no máximo um tipo de ingresso por atividade para uma participação;
+* impedir cancelamento de ingresso;
+* garantir que o total de reembolsos não ultrapasse o pagamento;
+* controlar a criação/remoção de `ExcursionVehicle` conforme a quantidade de `ExcursionBus`;
+* impedir redução de quantidade de ônibus quando houver passageiros que dependam dos veículos removidos.
+
+---
+
+# 14. Conceitos deliberadamente não modelados
+
+Os seguintes conceitos não serão entidades independentes no MVP:
+
+### Seat
+
+Não será criada uma entidade `Seat`.
+
+O assento será representado por:
 
 ```text
-                         ┌──────────────────┐
-                         │     Pessoa       │
-                         └────────┬─────────┘
-                                  │
-                                  │ 1:N
-                                  ▼
-                         ┌──────────────────┐
-                         │  Participação   │
-                         └────────┬─────────┘
-                                  │
-                 ┌────────────────┼────────────────┐
-                 │                │                │
-                 ▼                ▼                ▼
-          Acomodação         Transporte       Pagamentos
-                 │                │
-                 ▼                ▼
-               Quarto           Ônibus
-                                  │
-                                  ▼
-                              Assento
-
-
-                         ┌──────────────────┐
-                         │    Excursão      │
-                         └────────┬─────────┘
-                                  │
-             ┌────────────────────┼────────────────────┐
-             │                    │                    │
-             ▼                    ▼                    ▼
-          Hotéis              Atividades           Despesas
-             │                    │
-             ▼                    ▼
-          Quartos           Tipos de Ingresso
-                                  │
-                                  ▼
-                         Compras de Ingresso
-                                  │
-                                  ▼
-                              Participação
+ExcursionVehicle + seat_number
 ```
 
----
+Uma entidade própria poderá ser criada futuramente caso seja necessário representar layouts físicos diferentes.
 
-# 17. Entidades identificadas
+### TravelGroup
 
-O modelo conceitual inicial possui os seguintes conceitos:
+Não será criada uma entidade de grupo de viagem inicialmente.
 
-### Núcleo
+Famílias e amigos poderão ser tratados operacionalmente sem criar uma estrutura formal de grupo.
 
-1. Pessoa
-2. Excursão
-3. Participação
+### Credit
 
-### Transporte
+Crédito de cancelamento não será modelado inicialmente como entidade própria.
 
-4. Tipo de Ônibus
-5. Ônibus da Excursão
+A necessidade será reavaliada quando o fluxo financeiro de cancelamento for implementado.
 
-### Hospedagem
+### Vehicle/Fleet
 
-6. Hotel
-7. Hotel na Excursão
-8. Quarto
+Não será criada uma entidade global de veículo físico.
 
-### Atividades
+O MVP não precisa controlar:
 
-9. Atividade
-10. Tipo de Ingresso
-11. Compra de Ingresso
-12. Compra de Ingressos do Fornecedor
+* placa;
+* chassi;
+* proprietário;
+* empresa de transporte;
+* documentação do veículo.
 
-### Financeiro
-
-13. Pagamento
-14. Reembolso
-15. Despesa
-
----
-
-# 18. Conceitos deliberadamente não modelados ainda
-
-Alguns conceitos foram identificados, mas não serão transformados em entidades neste momento.
-
-## Assento
-
-Inicialmente será representado como uma posição dentro do ônibus da excursão.
-
-Uma entidade própria poderá ser criada caso o mapa físico dos veículos exija isso.
-
-## Grupo de viagem
-
-Famílias e amigos podem querer viajar juntos.
-
-Essa necessidade existe operacionalmente, mas ainda não foi definida como requisito obrigatório do sistema.
-
-Portanto, não será criada uma entidade `Grupo` neste momento.
-
-## Crédito
-
-Créditos decorrentes de cancelamentos foram identificados como necessidade futura.
-
-O conceito será detalhado antes de entrar no modelo principal.
-
----
-
-# 19. Regras de integridade do domínio
-
-O modelo deve respeitar, no mínimo:
-
-* uma pessoa pode possuir várias participações;
-* uma pessoa não pode possuir duas participações na mesma excursão;
-* uma excursão possui várias participações;
-* uma participação possui um único valor contratado;
-* uma participação pode ou não possuir transporte;
-* uma participação deve possuir acomodação antes da confirmação operacional;
-* uma participação não pode ocupar dois quartos simultaneamente;
-* um quarto não pode ultrapassar sua capacidade;
-* um assento não pode ser ocupado por duas participações ativas;
-* uma atividade pode possuir vários tipos de ingresso;
-* uma participação pode possuir no máximo um ingresso por atividade;
-* o preço vendido do ingresso deve ser preservado;
-* um pagamento deve possuir finalidade;
-* reembolsos não devem apagar pagamentos;
-* despesas pertencem a uma excursão.
-
----
-
-# 20. Decisões ainda pendentes
-
-O modelo ainda possui algumas decisões que deverão ser refinadas antes da criação do banco de dados:
-
-1. Estados possíveis de uma participação;
-2. Estados possíveis de uma excursão;
-3. Estados de uma compra de ingresso;
-4. Como representar exatamente a compra de ingressos com fornecedores;
-5. Como registrar fornecedores;
-6. Como representar histórico de alterações de valores;
-7. Regras detalhadas de reembolso;
-8. Modelo de fechamento financeiro;
-9. Necessidade de grupos de viagem;
-10. Necessidade de entidade própria para assentos.
-
-Essas decisões serão analisadas antes da modelagem física do banco.
-
----
-
-# 21. Regra para evolução do modelo
-
-Uma nova entidade não deve ser criada apenas porque existe uma informação nova.
-
-Antes de criar um novo conceito, devemos verificar:
-
-1. Existe uma regra de negócio associada?
-2. Existe comportamento próprio?
-3. Possui ciclo de vida?
-4. Possui relacionamentos próprios?
-5. Precisa ser consultada ou alterada independentemente?
-6. Sua ausência prejudicaria a representação correta do domínio?
-
-Se a resposta for não, a informação provavelmente pertence a uma entidade já existente.
-
----
-
-# 22. Próximo passo
-
-Após a validação deste modelo conceitual, o próximo passo será criar o diagrama visual do domínio e, posteriormente, transformar o modelo conceitual em um modelo de dados para PostgreSQL.
+`ExcursionVehicle` é suficiente para controlar a unidade operacional utilizada naquela excursão.
