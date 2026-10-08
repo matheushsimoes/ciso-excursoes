@@ -1,4 +1,4 @@
-```sql
+
 -- ============================================================
 -- CISO EXCURSÕES
 -- Initial Database Schema
@@ -753,4 +753,3 @@ CREATE UNIQUE INDEX uq_participation_active_vehicle_seat
     ON participation (excursion_vehicle_id, seat_number)
     WHERE status = 'ACTIVE'
       AND seat_number IS NOT NULL;
-```
