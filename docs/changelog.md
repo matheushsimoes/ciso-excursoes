@@ -119,3 +119,7 @@ Isso permite controlar:
 * Mantida a capacidade definida pelo `BusType`.
 * Não será criada uma entidade global de frota/veículo no MVP.
 * Não será criada uma entidade independente de assento no MVP.
+
+## 2026-10-08 - Alteração dos módulos de backend
+
+Foi decidido através de ADR que o projeto utilizará o ESM, visto que o Node 24 funciona exclusivamente com ele
