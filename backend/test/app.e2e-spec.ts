@@ -143,16 +143,16 @@ describe('Person (e2e)', () => {
     });
   });
 
-  describe('GET /persons/', () => {
+  describe('GET /persons', () => {
     it('should return all persons', async () => {
       const createPerson1 = await request(app.getHttpServer())
         .post('/persons')
         .send({
-          fullName: 'Carlos da Silva',
+          fullName: 'Mauricio da Silva',
           document: '11111111111',
           birthDate: '1988-07-20',
           phone: '11988888888',
-          email: 'carlos@example.com',
+          email: 'mauricio@example.com',
         })
         .expect(201);
 
@@ -165,7 +165,7 @@ describe('Person (e2e)', () => {
           document: '22222222222',
           birthDate: '1988-07-20',
           phone: '11988888888',
-          email: 'carlos@example.com',
+          email: 'joao@example.com',
         })
         .expect(201);
 
@@ -174,7 +174,7 @@ describe('Person (e2e)', () => {
       const createPerson3 = await request(app.getHttpServer())
         .post('/persons')
         .send({
-          fullName: 'Mauricio da Silva',
+          fullName: 'Carlos da Silva',
           document: '33333333333',
           birthDate: '1988-07-20',
           phone: '11988888888',
@@ -190,9 +190,9 @@ describe('Person (e2e)', () => {
 
       expect(response.body).toEqual([
         {
-          id: person1Id,
+          id: person3Id,
           fullName: 'Carlos da Silva',
-          document: '11111111111',
+          document: '33333333333',
           birthDate: expect.any(String),
           phone: '11988888888',
           email: 'carlos@example.com',
@@ -205,17 +205,17 @@ describe('Person (e2e)', () => {
           document: '22222222222',
           birthDate: expect.any(String),
           phone: '11988888888',
-          email: 'carlos@example.com',
+          email: 'joao@example.com',
           createdAt: expect.any(String),
           updatedAt: expect.any(String),
         },
         {
-          id: person3Id,
+          id: person1Id,
           fullName: 'Mauricio da Silva',
-          document: '33333333333',
+          document: '11111111111',
           birthDate: expect.any(String),
           phone: '11988888888',
-          email: 'carlos@example.com',
+          email: 'mauricio@example.com',
           createdAt: expect.any(String),
           updatedAt: expect.any(String),
         },
