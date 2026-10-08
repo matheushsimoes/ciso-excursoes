@@ -1,0 +1,29 @@
+# Dependências
+node_modules/
+
+# Build e cache do TypeScript
+dist/
+*.tsbuildinfo
+
+# Testes
+coverage/
+
+# Variáveis de ambiente (só o exemplo é versionado)
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema operacional / editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# Pasta temporária de arquivos a apagar manualmente
+_to_delete/
