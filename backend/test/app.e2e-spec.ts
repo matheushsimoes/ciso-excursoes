@@ -145,28 +145,74 @@ describe('Person (e2e)', () => {
 
   describe('GET /persons/', () => {
     it('should return all persons', async () => {
-      const createResponse = await request(app.getHttpServer())
+      const createPerson1 = await request(app.getHttpServer())
         .post('/persons')
         .send({
           fullName: 'Carlos da Silva',
-          document: '98765432100',
+          document: '11111111111',
           birthDate: '1988-07-20',
           phone: '11988888888',
           email: 'carlos@example.com',
         })
         .expect(201);
 
-      const personId = createResponse.body.id;
+      const person1Id = createPerson1.body.id;
+
+      const createPerson2 = await request(app.getHttpServer())
+        .post('/persons')
+        .send({
+          fullName: 'Joao da Silva',
+          document: '22222222222',
+          birthDate: '1988-07-20',
+          phone: '11988888888',
+          email: 'carlos@example.com',
+        })
+        .expect(201);
+
+      const person2Id = createPerson2.body.id;
+
+      const createPerson3 = await request(app.getHttpServer())
+        .post('/persons')
+        .send({
+          fullName: 'Mauricio da Silva',
+          document: '33333333333',
+          birthDate: '1988-07-20',
+          phone: '11988888888',
+          email: 'carlos@example.com',
+        })
+        .expect(201);
+
+      const person3Id = createPerson3.body.id;
 
       const response = await request(app.getHttpServer())
-        .get(`/persons/`)
+        .get(`/persons`)
         .expect(200);
 
       expect(response.body).toEqual([
         {
-          id: personId,
+          id: person1Id,
           fullName: 'Carlos da Silva',
-          document: '98765432100',
+          document: '11111111111',
+          birthDate: expect.any(String),
+          phone: '11988888888',
+          email: 'carlos@example.com',
+          createdAt: expect.any(String),
+          updatedAt: expect.any(String),
+        },
+        {
+          id: person2Id,
+          fullName: 'Joao da Silva',
+          document: '22222222222',
+          birthDate: expect.any(String),
+          phone: '11988888888',
+          email: 'carlos@example.com',
+          createdAt: expect.any(String),
+          updatedAt: expect.any(String),
+        },
+        {
+          id: person3Id,
+          fullName: 'Mauricio da Silva',
+          document: '33333333333',
           birthDate: expect.any(String),
           phone: '11988888888',
           email: 'carlos@example.com',
@@ -176,12 +222,12 @@ describe('Person (e2e)', () => {
       ]);
     });
 
-    it('should return 404 when person does not exist', async () => {
+    it('should return an empty list when there are no persons', async () => {
       const response = await request(app.getHttpServer())
-        .get(`/persons/`)
+        .get(`/persons`)
         .expect(200);
 
-      expect(response.body).toMatchObject([]);
+      expect(response.body).toEqual([]);
     });
   });
 });
