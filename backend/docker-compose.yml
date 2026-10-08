@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: ciso-excursoes-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ciso_excursoes
+      POSTGRES_USER: ciso
+      POSTGRES_PASSWORD: ciso
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
