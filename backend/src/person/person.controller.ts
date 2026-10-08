@@ -1,7 +1,7 @@
 import { PersonService } from './person.service.js';
 import { CreatePersonDto } from './dto/create-person.dto.js';
 import { Person } from './domain/person.js';
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Patch } from '@nestjs/common';
 
 @Controller('persons')
 export class PersonController {
@@ -20,5 +20,10 @@ export class PersonController {
   @Get()
   async findAll(): Promise<Person[]> {
     return this.personService.findAll();
+  }
+
+  @Patch(':id')
+  async update(@Param('id') id: string, @Body() dto: CreatePersonDto): Promise<Person> {
+    return this.personService.update(id, dto);
   }
 }

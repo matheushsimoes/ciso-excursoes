@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 
 import { Person } from './domain/person.js';
 import { CreatePersonDto } from './dto/create-person.dto.js';
+import { UpdatePersonDto } from './dto/update-person.dto.js';
 import { PersonRepository } from './person.repository.js';
 import {
   ConflictException,
@@ -50,5 +51,21 @@ export class PersonService {
 
   async findAll(): Promise<Person[]> {
     return this.personRepository.findAll();
+  }
+
+  async update(id: string, dto: UpdatePersonDto): Promise<Person> {
+    const person = await this.findById(id);
+    
+    const updatedPerson: Person = {
+      ...person,
+      fullName: dto.fullName ?? person.fullName,
+      document: dto.document ?? person.document,
+      birthDate: dto.birthDate ? new Date(dto.birthDate) : person.birthDate,
+      phone: dto.phone ?? person.phone,
+      email: dto.email ?? person.email,
+      updatedAt: new Date(),
+    };
+
+    return this.personRepository.update(updatedPerson);
   }
 }

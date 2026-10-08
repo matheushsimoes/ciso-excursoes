@@ -15,6 +15,7 @@ describe('PersonService', () => {
       findByDocument: jest.fn(),
       findById: jest.fn(),
       findAll: jest.fn(),
+      update: jest.fn(),
     };
 
     service = new PersonService(repository);
@@ -183,4 +184,36 @@ describe('PersonService', () => {
       expect(repository.findAll).toHaveBeenCalledWith();
     });
   });
+
+  describe('update', () => {
+        const existingPerson: Person = {
+            id: 'person-id',
+            fullName: 'João da Silva',
+            document: '12345678900',
+            birthDate: new Date('1990-05-10'),
+            phone: '11999999999',
+            email: 'joao@example.com',
+            createdAt: new Date('2026-01-01T00:00:00Z'),
+            updatedAt: new Date('2026-01-01T00:00:00Z'),
+        };
+
+        beforeEach(() => {
+            repository.findById.mockResolvedValue(existingPerson);
+            repository.update.mockImplementation(async (person) => person);
+        });
+
+        it('should update the full name', async () => {
+            const result = await service.update(existingPerson.id, {
+            fullName: 'Novo Nome',
+            });
+
+            expect(result).toEqual({
+            ...existingPerson,
+            fullName: 'Novo Nome',
+            updatedAt: expect.any(Date),
+            });
+            expect(result.updatedAt).not.toEqual(existingPerson.updatedAt);
+            expect(repository.update).toHaveBeenCalledWith(result);
+        });
+    });
 });

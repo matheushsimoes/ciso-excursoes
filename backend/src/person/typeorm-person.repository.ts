@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -14,19 +14,7 @@ export class TypeOrmPersonRepository implements PersonRepository {
   ) {}
 
   async create(person: Person): Promise<Person> {
-    const entity = this.repository.create({
-      id: person.id,
-      fullName: person.fullName,
-      document: person.document,
-      birthDate: person.birthDate,
-      phone: person.phone ?? null,
-      email: person.email ?? null,
-      createdAt: person.createdAt,
-      updatedAt: person.updatedAt,
-    });
-
-    const savedEntity = await this.repository.save(entity);
-
+    const savedEntity = await this.repository.save(this.toEntity(person));
     return this.toDomain(savedEntity);
   }
 
@@ -50,6 +38,25 @@ export class TypeOrmPersonRepository implements PersonRepository {
     const entities = await this.repository.find({ order: { fullName: 'ASC' } });
     return entities.map((entity) => this.toDomain(entity));
   }
+
+  async update(person: Person): Promise<Person> {
+    const savedEntity = await this.repository.save(this.toEntity(person));
+    return this.toDomain(savedEntity);
+  }
+
+  private toEntity(person: Person): PersonEntity {
+    return this.repository.create({
+      id: person.id,
+      fullName: person.fullName,
+      document: person.document,
+      birthDate: person.birthDate,
+      phone: person.phone ?? null,
+      email: person.email ?? null,
+      createdAt: person.createdAt,
+      updatedAt: person.updatedAt,
+    });
+  }
+
 
   private toDomain(entity: PersonEntity): Person {
     return {

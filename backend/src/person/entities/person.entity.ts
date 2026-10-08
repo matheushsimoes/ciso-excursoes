@@ -1,9 +1,7 @@
 import {
   Column,
-  CreateDateColumn,
   Entity,
   PrimaryColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 
 @Entity({ name: 'person' })
@@ -48,13 +46,13 @@ export class PersonEntity {
   })
   email: string | null;
 
-  @CreateDateColumn({
+  @Column({
     name: 'created_at',
     type: 'timestamptz',
   })
   createdAt: Date;
 
-  @UpdateDateColumn({
+  @Column({
     name: 'updated_at',
     type: 'timestamptz',
   })
