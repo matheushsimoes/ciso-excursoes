@@ -46,6 +46,11 @@ export class TypeOrmPersonRepository implements PersonRepository {
     return entity ? this.toDomain(entity) : null;
   }
 
+  async findAll(): Promise<Person[]> {
+    const entities = await this.repository.find({ order: { fullName: 'ASC' } });
+    return entities.map((entity) => this.toDomain(entity));
+  }
+
   private toDomain(entity: PersonEntity): Person {
     return {
       id: entity.id,
