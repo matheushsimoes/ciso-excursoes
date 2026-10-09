@@ -3,9 +3,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeOrmConfig } from './database/typeorm.config.js';
 import { PersonModule } from './person/person.module.js';
 import { APP_PIPE } from '@nestjs/core';
+import { ExcursionModule } from './excursion/excursion.module.js';
 
 @Module({
-  imports: [TypeOrmModule.forRoot(typeOrmConfig), PersonModule],
+  imports: [
+    TypeOrmModule.forRoot(typeOrmConfig),
+    PersonModule,
+    ExcursionModule,
+  ],
   providers: [
     {
       provide: APP_PIPE,
