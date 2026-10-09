@@ -13,8 +13,7 @@ import { APP_PIPE } from '@nestjs/core';
         whitelist: true,
         forbidNonWhitelisted: true,
       }),
-    }
-  ]
+    },
+  ],
 })
-
 export class AppModule {}

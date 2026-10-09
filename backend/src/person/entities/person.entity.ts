@@ -24,7 +24,7 @@ export class PersonEntity {
     name: 'birth_date',
     type: 'date',
   })
-  birthDate: Date;
+  birthDate: string;
 
   @Column({
     name: 'phone',

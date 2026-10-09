@@ -2,7 +2,7 @@ export interface Person {
   id: string;
   fullName: string;
   document: string;
-  birthDate: Date;
+  birthDate: string;
   phone?: string;
   email?: string;
   createdAt: Date;

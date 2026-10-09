@@ -80,7 +80,7 @@ describe('Person (e2e)', () => {
         id: expect.any(String),
         fullName: 'João da Silva',
         document: '12345678900',
-        birthDate: expect.any(String),
+        birthDate: '1990-05-10',
         phone: '11999999999',
         email: 'joao@example.com',
         createdAt: expect.any(String),
@@ -137,7 +137,7 @@ describe('Person (e2e)', () => {
         id: personId,
         fullName: 'Carlos da Silva',
         document: '98765432100',
-        birthDate: expect.any(String),
+        birthDate: '1988-07-20',
         phone: '11988888888',
         email: 'carlos@example.com',
         createdAt: expect.any(String),
@@ -207,7 +207,7 @@ describe('Person (e2e)', () => {
           id: person3Id,
           fullName: 'Carlos da Silva',
           document: '33333333333',
-          birthDate: expect.any(String),
+          birthDate: '1988-07-20',
           phone: '11988888888',
           email: 'carlos@example.com',
           createdAt: expect.any(String),
@@ -217,7 +217,7 @@ describe('Person (e2e)', () => {
           id: person2Id,
           fullName: 'Joao da Silva',
           document: '22222222222',
-          birthDate: expect.any(String),
+          birthDate: '1988-07-20',
           phone: '11988888888',
           email: 'joao@example.com',
           createdAt: expect.any(String),
@@ -227,7 +227,7 @@ describe('Person (e2e)', () => {
           id: person1Id,
           fullName: 'Mauricio da Silva',
           document: '11111111111',
-          birthDate: expect.any(String),
+          birthDate: '1988-07-20',
           phone: '11988888888',
           email: 'mauricio@example.com',
           createdAt: expect.any(String),
@@ -258,6 +258,7 @@ describe('Person (e2e)', () => {
         id: person.id,
         fullName: 'João Atualizado',
         document: person.document,
+        birthDate: '1990-05-10',
         phone: '11999999999',
       });
 
@@ -266,6 +267,23 @@ describe('Person (e2e)', () => {
         .expect(200);
 
       expect(persisted.body.fullName).toBe('João Atualizado');
+    });
+
+    it('should return birthDate as YYYY-MM-DD after updating it', async () => {
+      const person = await createPerson();
+
+      const response = await request(app.getHttpServer())
+        .patch(`/persons/${person.id}`)
+        .send({ birthDate: '1991-01-01' })
+        .expect(200);
+
+      expect(response.body.birthDate).toBe('1991-01-01');
+
+      const persisted = await request(app.getHttpServer())
+        .get(`/persons/${person.id}`)
+        .expect(200);
+
+      expect(persisted.body.birthDate).toBe('1991-01-01');
     });
 
     it('should return 404 when the person does not exist', async () => {

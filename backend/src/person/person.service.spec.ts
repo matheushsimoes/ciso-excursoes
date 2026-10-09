@@ -42,7 +42,7 @@ describe('PersonService', () => {
         id: expect.any(String),
         fullName: dto.fullName,
         document: dto.document,
-        birthDate: new Date(dto.birthDate),
+        birthDate: dto.birthDate,
         phone: dto.phone,
         email: dto.email,
         createdAt: expect.any(Date),
@@ -77,7 +77,7 @@ describe('PersonService', () => {
         id: expect.any(String),
         fullName: dtoWithoutOptionalFields.fullName,
         document: dtoWithoutOptionalFields.document,
-        birthDate: new Date(dtoWithoutOptionalFields.birthDate),
+        birthDate: dtoWithoutOptionalFields.birthDate,
         phone: undefined,
         email: undefined,
         createdAt: expect.any(Date),
@@ -90,7 +90,7 @@ describe('PersonService', () => {
         id: 'existing-person-id',
         fullName: dto.fullName,
         document: dto.document,
-        birthDate: new Date(dto.birthDate),
+        birthDate: dto.birthDate,
         phone: dto.phone,
         email: dto.email,
         createdAt: new Date(),
@@ -111,7 +111,7 @@ describe('PersonService', () => {
         id: 'person-id',
         fullName: 'João da Silva',
         document: '12345678900',
-        birthDate: new Date('1990-05-10'),
+        birthDate: '1990-05-10',
         phone: '11999999999',
         email: 'joao@example.com',
         createdAt: new Date(),
@@ -145,7 +145,7 @@ describe('PersonService', () => {
           id: 'person-id',
           fullName: 'João da Silva',
           document: '12345678900',
-          birthDate: new Date('1990-05-10'),
+          birthDate: '1990-05-10',
           phone: '11999999999',
           email: 'joao@example.com',
           createdAt: new Date(),
@@ -155,7 +155,7 @@ describe('PersonService', () => {
           id: 'person-id-2',
           fullName: 'Maria Oliveira',
           document: '98765432100',
-          birthDate: new Date('1985-08-15'),
+          birthDate: '1985-08-15',
           phone: '21988888888',
           email: 'maria@example.com',
           createdAt: new Date(),
@@ -190,7 +190,7 @@ describe('PersonService', () => {
       id: 'person-id',
       fullName: 'João da Silva',
       document: '12345678900',
-      birthDate: new Date('1990-05-10'),
+      birthDate: '1990-05-10',
       phone: '11999999999',
       email: 'joao@example.com',
       createdAt: new Date('2026-01-01T00:00:00Z'),
@@ -245,7 +245,7 @@ describe('PersonService', () => {
         id: 'another-person-id',
         fullName: 'Maria Oliveira',
         document: '98765432100',
-        birthDate: new Date('1985-08-15'),
+        birthDate: '1985-08-15',
         phone: '21988888888',
         email: 'maria@example.com',
         createdAt: new Date('2026-01-01T00:00:00Z'),
@@ -259,6 +259,15 @@ describe('PersonService', () => {
       ).rejects.toThrow(ConflictException);
 
       expect(repository.update).not.toHaveBeenCalled();
+    });
+
+    it('should update the birth date keeping the YYYY-MM-DD format', async () => {
+      const result = await service.update(existingPerson.id, {
+        birthDate: '1991-01-01',
+      });
+
+      expect(result.birthDate).toBe('1991-01-01');
+      expect(repository.update).toHaveBeenCalledWith(result);
     });
 
     it('should not check for conflicts when the document is unchanged', async () => {
