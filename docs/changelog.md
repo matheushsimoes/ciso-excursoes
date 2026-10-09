@@ -122,4 +122,11 @@ Isso permite controlar:
 
 ## 2026-10-08 - Alteração dos módulos de backend
 
-Foi decidido através de ADR que o projeto utilizará o ESM, visto que o Node 24 funciona exclusivamente com ele
+Foi decidido que o backend utilizará ESM de forma consistente (ADR 0001). O NestJS 12 é distribuído apenas como ESM, e com Jest a flag `--experimental-vm-modules` é necessária em qualquer cenário, então migrar para CommonJS não traria benefício e manteria dois modelos de módulos convivendo.
+
+## 2026-10-09 - Validação de entrada e datas de negócio
+
+* Adicionada validação dos payloads com `class-validator` e `ValidationPipe` global (registrado via `APP_PIPE` para valer também nos testes E2E).
+* Payloads inválidos ou com campos desconhecidos passam a retornar `400` em vez de `500`.
+* Datas de negócio passam a ser representadas como string `YYYY-MM-DD` em todas as camadas (ADR 0002).
+* Corrigido o formato inconsistente de `birthDate` entre `POST`, `GET` e `PATCH`.
