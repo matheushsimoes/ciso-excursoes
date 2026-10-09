@@ -49,6 +49,20 @@ describe('Person (e2e)', () => {
     await app.close();
   });
 
+  async function createPerson(overrides: Record<string, unknown> = {}) {
+    const response = await request(app.getHttpServer())
+      .post('/persons')
+      .send({
+        fullName: 'João da Silva',
+        document: '12345678900',
+        birthDate: '1990-05-10',
+        ...overrides,
+      })
+      .expect(201);
+
+    return response.body;
+  }
+
   describe('POST /persons', () => {
     it('should create a person', async () => {
       const response = await request(app.getHttpServer())
@@ -228,6 +242,47 @@ describe('Person (e2e)', () => {
         .expect(200);
 
       expect(response.body).toEqual([]);
+    });
+  });
+
+  describe('PATCH /persons/:id', () => {
+    it('should update the given fields and keep the others', async () => {
+      const person = await createPerson({ phone: '11999999999' });
+
+      const response = await request(app.getHttpServer())
+        .patch(`/persons/${person.id}`)
+        .send({ fullName: 'João Atualizado' })
+        .expect(200);
+
+      expect(response.body).toMatchObject({
+        id: person.id,
+        fullName: 'João Atualizado',
+        document: person.document,
+        phone: '11999999999',
+      });
+
+      const persisted = await request(app.getHttpServer())
+        .get(`/persons/${person.id}`)
+        .expect(200);
+
+      expect(persisted.body.fullName).toBe('João Atualizado');
+    });
+
+    it('should return 404 when the person does not exist', async () => {
+      await request(app.getHttpServer())
+        .patch('/persons/00000000-0000-0000-0000-000000000000')
+        .send({ fullName: 'Ninguém' })
+        .expect(404);
+    });
+
+    it('should return 409 when the document belongs to another person', async () => {
+      await createPerson({ document: '11111111111' });
+      const person = await createPerson({ document: '22222222222' });
+
+      await request(app.getHttpServer())
+        .patch(`/persons/${person.id}`)
+        .send({ document: '11111111111' })
+        .expect(409);
     });
   });
 });

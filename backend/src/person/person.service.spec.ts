@@ -186,34 +186,89 @@ describe('PersonService', () => {
   });
 
   describe('update', () => {
-        const existingPerson: Person = {
-            id: 'person-id',
-            fullName: 'João da Silva',
-            document: '12345678900',
-            birthDate: new Date('1990-05-10'),
-            phone: '11999999999',
-            email: 'joao@example.com',
-            createdAt: new Date('2026-01-01T00:00:00Z'),
-            updatedAt: new Date('2026-01-01T00:00:00Z'),
-        };
+    const existingPerson: Person = {
+      id: 'person-id',
+      fullName: 'João da Silva',
+      document: '12345678900',
+      birthDate: new Date('1990-05-10'),
+      phone: '11999999999',
+      email: 'joao@example.com',
+      createdAt: new Date('2026-01-01T00:00:00Z'),
+      updatedAt: new Date('2026-01-01T00:00:00Z'),
+    };
 
-        beforeEach(() => {
-            repository.findById.mockResolvedValue(existingPerson);
-            repository.update.mockImplementation(async (person) => person);
-        });
-
-        it('should update the full name', async () => {
-            const result = await service.update(existingPerson.id, {
-            fullName: 'Novo Nome',
-            });
-
-            expect(result).toEqual({
-            ...existingPerson,
-            fullName: 'Novo Nome',
-            updatedAt: expect.any(Date),
-            });
-            expect(result.updatedAt).not.toEqual(existingPerson.updatedAt);
-            expect(repository.update).toHaveBeenCalledWith(result);
-        });
+    beforeEach(() => {
+      repository.findById.mockResolvedValue(existingPerson);
+      repository.update.mockImplementation(async (person) => person);
     });
+
+    it('should update the full name', async () => {
+      const result = await service.update(existingPerson.id, {
+        fullName: 'Novo Nome',
+      });
+
+      expect(result).toEqual({
+        ...existingPerson,
+        fullName: 'Novo Nome',
+        updatedAt: expect.any(Date),
+      });
+      expect(result.updatedAt).not.toEqual(existingPerson.updatedAt);
+      expect(repository.update).toHaveBeenCalledWith(result);
+    });
+
+    it('should throw NotFoundException if the person does not exist', async () => {
+      repository.findById.mockResolvedValue(null);
+
+      await expect(
+        service.update('non-existent-id', { fullName: 'Novo Nome' }),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(repository.update).not.toHaveBeenCalled();
+    });
+
+    it('should keep the same value for not sent fields', async () => {
+      const result = await service.update(existingPerson.id, {
+        phone: '11888888888',
+      });
+
+      expect(result).toEqual({
+        ...existingPerson,
+        phone: '11888888888',
+        updatedAt: expect.any(Date),
+      });
+      expect(result.updatedAt).not.toEqual(existingPerson.updatedAt);
+      expect(repository.update).toHaveBeenCalledWith(result);
+    });
+
+    it('should not allow updating the document to an existing one', async () => {
+      const anotherPerson: Person = {
+        id: 'another-person-id',
+        fullName: 'Maria Oliveira',
+        document: '98765432100',
+        birthDate: new Date('1985-08-15'),
+        phone: '21988888888',
+        email: 'maria@example.com',
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+        updatedAt: new Date('2026-01-01T00:00:00Z'),
+      };
+
+      repository.findByDocument.mockResolvedValue(anotherPerson);
+
+      await expect(
+        service.update(existingPerson.id, { document: anotherPerson.document }),
+      ).rejects.toThrow(ConflictException);
+
+      expect(repository.update).not.toHaveBeenCalled();
+    });
+
+    it('should not check for conflicts when the document is unchanged', async () => {
+      const result = await service.update(existingPerson.id, {
+        document: existingPerson.document,
+      });
+
+      expect(result.document).toBe(existingPerson.document);
+      expect(repository.findByDocument).not.toHaveBeenCalled();
+      expect(repository.update).toHaveBeenCalledTimes(1);
+    });
+  });
 });

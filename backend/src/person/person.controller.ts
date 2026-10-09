@@ -1,5 +1,6 @@
 import { PersonService } from './person.service.js';
 import { CreatePersonDto } from './dto/create-person.dto.js';
+import { UpdatePersonDto } from './dto/update-person.dto.js';
 import { Person } from './domain/person.js';
 import { Body, Controller, Get, Param, Post, Patch } from '@nestjs/common';
 
@@ -23,7 +24,10 @@ export class PersonController {
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() dto: CreatePersonDto): Promise<Person> {
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdatePersonDto,
+  ): Promise<Person> {
     return this.personService.update(id, dto);
   }
 }

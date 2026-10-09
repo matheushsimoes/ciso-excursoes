@@ -57,7 +57,6 @@ export class TypeOrmPersonRepository implements PersonRepository {
     });
   }
 
-
   private toDomain(entity: PersonEntity): Person {
     return {
       id: entity.id,

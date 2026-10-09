@@ -55,7 +55,15 @@ export class PersonService {
 
   async update(id: string, dto: UpdatePersonDto): Promise<Person> {
     const person = await this.findById(id);
-    
+
+    if (dto.document && dto.document !== person.document) {
+      const existing = await this.personRepository.findByDocument(dto.document);
+
+      if (existing) {
+        throw new ConflictException('Person with this document already exists');
+      }
+    }
+
     const updatedPerson: Person = {
       ...person,
       fullName: dto.fullName ?? person.fullName,
