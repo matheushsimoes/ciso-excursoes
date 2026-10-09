@@ -1,12 +1,11 @@
 import {
   IsEmail,
-  IsISO8601,
   IsNotEmpty,
   IsOptional,
   IsString,
-  Matches,
   MaxLength,
 } from 'class-validator';
+import { IsBusinessDate } from '../../common/validation/is-business-date.js';
 
 export class CreatePersonDto {
   @IsString()
@@ -19,10 +18,7 @@ export class CreatePersonDto {
   @MaxLength(20)
   document: string;
 
-  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
-    message: 'birthDate must be in YYYY-MM-DD format',
-  })
-  @IsISO8601({ strict: true })
+  @IsBusinessDate()
   birthDate: string;
 
   @IsOptional()
