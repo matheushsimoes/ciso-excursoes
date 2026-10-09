@@ -130,3 +130,11 @@ Foi decidido que o backend utilizará ESM de forma consistente (ADR 0001). O Nes
 * Payloads inválidos ou com campos desconhecidos passam a retornar `400` em vez de `500`.
 * Datas de negócio passam a ser representadas como string `YYYY-MM-DD` em todas as camadas (ADR 0002).
 * Corrigido o formato inconsistente de `birthDate` entre `POST`, `GET` e `PATCH`.
+
+## 2026-10-09 - Tipo da excursão e valores monetários
+
+* Adicionada a coluna `type` (`DAY_TRIP` / `OVERNIGHT`) em `excursion` pela migration `002_add_excursion_type.sql`.
+* RN22 atualizada: a obrigatoriedade de hospedagem vale apenas para excursões `OVERNIGHT`.
+* Criadas a RN54 (tipo da excursão) e a RN55 (status inicial e mudança de status).
+* Registrada a DD16 (tipo da excursão) e complementada a DD13.
+* Valores monetários representados como string decimal na aplicação (ADR 0003).

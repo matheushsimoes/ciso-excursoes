@@ -48,6 +48,7 @@ Principais informações:
 
 * nome;
 * destino;
+* tipo (`DAY_TRIP` ou `OVERNIGHT`);
 * data de início;
 * data de término;
 * preço de referência;

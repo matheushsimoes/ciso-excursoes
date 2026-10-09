@@ -46,6 +46,23 @@ Uma excursão possui um preço de referência utilizado como base comercial.
 
 Esse valor não representa necessariamente o valor pago por cada participante.
 
+### RN54 — Tipo da excursão
+
+Toda excursão possui um tipo:
+
+* `DAY_TRIP`: bate-volta, sem hospedagem;
+* `OVERNIGHT`: com pernoite e hospedagem.
+
+O tipo deve ser informado obrigatoriamente no cadastro. O sistema não assume um valor padrão.
+
+Ponto em aberto: confirmar se uma excursão `DAY_TRIP` sempre começa e termina na mesma data. Enquanto não houver confirmação, essa restrição não é aplicada.
+
+### RN55 — Status inicial e mudança de status
+
+Toda excursão é criada com status `DRAFT`.
+
+O status não é alterado pela edição comum dos dados da excursão. A mudança de status é uma operação própria e segue as transições permitidas do ciclo de vida da excursão.
+
 ### RN08 — Valor contratado individual
 
 Cada participação possui seu próprio valor contratado.
@@ -146,9 +163,15 @@ Quando houver alteração da configuração de transporte, o responsável pela e
 
 # 4. Hospedagem
 
-### RN22 — Participação deve possuir hospedagem
+### RN22 — Participação deve possuir hospedagem em excursões com pernoite
 
-Uma participação ativa que esteja operacionalmente confirmada deve possuir uma acomodação.
+Em excursões do tipo `OVERNIGHT`, toda participação ativa que esteja operacionalmente confirmada deve possuir uma acomodação.
+
+Em excursões do tipo `DAY_TRIP` (bate-volta), não há hospedagem e a participação não possui acomodação.
+
+Atualmente não existe exceção para participantes sem hospedagem em excursões `OVERNIGHT`. Caso essa necessidade surja, a evolução prevista é um campo na participação indicando a dispensa de hospedagem.
+
+A regra é verificada como validação de completude (por exemplo, antes de confirmar a excursão), e não impede o cadastro da participação, pois a acomodação é alocada posteriormente.
 
 ### RN23 — Uma participação possui uma acomodação
 

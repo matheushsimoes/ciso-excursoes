@@ -256,6 +256,8 @@ NUMERIC(12,2)
 
 Não será utilizado `FLOAT` para valores financeiros.
 
+Na aplicação, valores monetários são representados como string decimal (ex.: `"1500.00"`), nunca como `number`. Cálculos financeiros são feitos em centavos inteiros. Ver ADR 0003.
+
 ---
 
 ## DD14 — Status
@@ -277,3 +279,13 @@ TIMESTAMPTZ
 ```
 
 Campos como `created_at` e `updated_at` devem armazenar informações de data/hora com timezone.
+
+---
+
+## DD16 — Tipo da excursão
+
+A excursão possui o campo `type`, com os valores `DAY_TRIP` e `OVERNIGHT`, representado como `VARCHAR` com `CHECK` (seguindo a DD14).
+
+O tipo foi preferido a derivar a informação da existência de hotéis associados, pois torna a intenção explícita desde o cadastro e permite identificar pendências de hospedagem mesmo antes de os hotéis serem cadastrados.
+
+Introduzido pela migration `002_add_excursion_type.sql`.
