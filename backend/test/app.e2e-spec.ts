@@ -285,4 +285,66 @@ describe('Person (e2e)', () => {
         .expect(409);
     });
   });
+
+  describe('payload validation', () => {
+    const validPayload = {
+      fullName: 'João da Silva',
+      document: '12345678900',
+      birthDate: '1990-05-10',
+    };
+
+    it('should return 400 when a required field is missing', async () => {
+      await request(app.getHttpServer())
+        .post('/persons')
+        .send({
+          document: validPayload.document,
+          birthDate: validPayload.birthDate,
+        })
+        .expect(400);
+    });
+
+    it('should return 400 when the email is invalid', async () => {
+      await request(app.getHttpServer())
+        .post('/persons')
+        .send({ ...validPayload, email: 'invalid-email' })
+        .expect(400);
+    });
+
+    it('should return 400 when birthDate is not in YYYY-MM-DD format', async () => {
+      await request(app.getHttpServer())
+        .post('/persons')
+        .send({ ...validPayload, birthDate: '10/05/1990' })
+        .expect(400);
+    });
+
+    it('should return 400 when birthDate is not a real date', async () => {
+      await request(app.getHttpServer())
+        .post('/persons')
+        .send({ ...validPayload, birthDate: '1990-02-31' })
+        .expect(400);
+    });
+
+    it('should return 400 when a field exceeds the column length', async () => {
+      await request(app.getHttpServer())
+        .post('/persons')
+        .send({ ...validPayload, document: '1'.repeat(21) })
+        .expect(400);
+    });
+
+    it('should return 400 when an unknown field is sent', async () => {
+      await request(app.getHttpServer())
+        .post('/persons')
+        .send({ ...validPayload, id: '00000000-0000-0000-0000-000000000000' })
+        .expect(400);
+    });
+
+    it('should return 400 when trying to update a read-only field', async () => {
+      const person = await createPerson();
+
+      await request(app.getHttpServer())
+        .patch(`/persons/${person.id}`)
+        .send({ createdAt: '2000-01-01T00:00:00.000Z' })
+        .expect(400);
+    });
+  });
 });
