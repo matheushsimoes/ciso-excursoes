@@ -2,7 +2,15 @@ import { PersonService } from './person.service.js';
 import { CreatePersonDto } from './dto/create-person.dto.js';
 import { UpdatePersonDto } from './dto/update-person.dto.js';
 import { Person } from './domain/person.js';
-import { Body, Controller, Get, Param, Post, Patch } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Patch,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 
 @Controller('persons')
 export class PersonController {
@@ -14,7 +22,7 @@ export class PersonController {
   }
 
   @Get(':id')
-  async findById(@Param('id') id: string): Promise<Person> {
+  async findById(@Param('id', ParseUUIDPipe) id: string): Promise<Person> {
     return this.personService.findById(id);
   }
 
@@ -25,7 +33,7 @@ export class PersonController {
 
   @Patch(':id')
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdatePersonDto,
   ): Promise<Person> {
     return this.personService.update(id, dto);
