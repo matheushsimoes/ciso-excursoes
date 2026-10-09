@@ -4,6 +4,7 @@ import request from 'supertest';
 import { DataSource } from 'typeorm';
 
 import { AppModule } from '../src/app.module.js';
+import { resetDatabase } from './reset-database.js';
 
 describe('Person (e2e)', () => {
   let app: INestApplication;
@@ -22,27 +23,7 @@ describe('Person (e2e)', () => {
   });
 
   beforeEach(async () => {
-    await dataSource.query(`
-    TRUNCATE TABLE
-      ticket_purchase,
-      ticket_supplier_purchase,
-      payment,
-      refund,
-      expense,
-      participation,
-      ticket_type,
-      activity,
-      room,
-      excursion_vehicle,
-      excursion_hotel,
-      excursion_bus,
-      supplier,
-      hotel,
-      bus_type,
-      excursion,
-      person
-    RESTART IDENTITY CASCADE;
-  `);
+    await resetDatabase(dataSource);
   });
 
   afterAll(async () => {
