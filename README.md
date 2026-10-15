@@ -1,53 +1,99 @@
 # Ciso Excursões
 
-Sistema de gestão de excursões desenvolvido para a Ciso Excursões.
+Excursion management system built for Ciso Excursões, a family-run bus excursion business in Brazil.
 
-O objetivo do projeto é substituir o controle atualmente realizado por planilhas e centralizar a operação das excursões em uma aplicação web.
+The goal is to replace the spreadsheets currently used to run the business with a single web application that centralizes the whole operation, from passenger sign-up to the financial result of each trip.
 
-## Objetivos
+> 🇧🇷 *Sistema de gestão de excursões desenvolvido para a Ciso Excursões, substituindo o controle em planilhas por uma aplicação web. A documentação de domínio e requisitos está em português, em `docs/`.*
 
-O sistema deverá permitir o gerenciamento de:
+## Scope
 
-* Excursões
-* Passageiros
-* Participações em excursões
-* Transporte e assentos
-* Hotéis e acomodações
-* Atividades e ingressos
-* Pagamentos
-* Cancelamentos e reembolsos
-* Despesas
-* Resultados financeiros
-* Relatórios operacionais
+The system is designed to manage:
 
-## Princípios do projeto
+- Excursions and excursion types
+- Passengers and their participation in excursions
+- Transport and seat allocation
+- Hotels and accommodation
+- Activities and tickets
+- Payments, cancellations and refunds
+- Expenses and financial results
+- Operational reports
 
-### Domínio antes da implementação
+## Tech stack
 
-As regras de negócio serão definidas e documentadas antes da implementação das funcionalidades correspondentes.
+| Layer | Technology |
+| --- | --- |
+| Language | TypeScript (ES modules) |
+| Backend | Node.js, NestJS |
+| Database | PostgreSQL 16, TypeORM, versioned SQL migrations |
+| Validation | class-validator, class-transformer |
+| Testing | Jest (unit), Supertest (end-to-end against a real database) |
+| Tooling | Docker Compose, oxlint, Prettier |
 
-### Documentação como fonte da verdade
+## Architecture
 
-Decisões importantes de negócio e arquitetura deverão ser documentadas no repositório e versionadas junto ao código.
+The application is a **modular monolith**: each business area (for example `person` and `excursion`) is a self-contained NestJS module with its own domain logic, DTOs, entities, service and controller. Persistence sits behind a repository interface with a TypeORM implementation, so domain rules do not depend on the ORM.
 
-### Evolução incremental
+The monolith can be split later if real needs for scale or module independence appear, without paying the cost of distributed systems up front.
 
-O sistema será desenvolvido inicialmente como um produto operacional para a Ciso Excursões, evitando complexidade desnecessária.
+Key design decisions are recorded as ADRs in [`docs/architecture/decisions/`](docs/architecture/decisions/), including:
 
-### Arquitetura
+- [ESM module system](docs/architecture/decisions/0001-esm-module-system.md)
+- [Business dates stored as strings](docs/architecture/decisions/0002-business-dates-as-strings.md), to avoid time zone drift
+- [Money as decimal strings](docs/architecture/decisions/0003-money-as-decimal-strings.md), to avoid floating-point rounding errors
 
-A aplicação será inicialmente desenvolvida como um **Modular Monolith**, permitindo futura evolução caso necessidades reais de escala ou independência entre módulos apareçam.
+## Engineering principles
 
-## Documentação
+- **Domain before implementation.** Business rules are defined and documented before the features that implement them.
+- **Documentation as the source of truth.** Business and architecture decisions live in the repository, versioned with the code.
+- **Incremental evolution.** The system is built first as a working product for one real business, avoiding unnecessary complexity.
 
-A documentação do projeto está organizada em:
+## Project structure
 
-* `docs/requirements/` — requisitos e regras de negócio
-* `docs/domain/` — modelo e conceitos do domínio
-* `docs/architecture/` — arquitetura da aplicação
-* `docs/architecture/decisions/` — decisões arquiteturais (ADRs)
-* `docs/changelog.md` — histórico de mudanças relevantes
+```
+backend/              NestJS application
+  src/
+    person/           Passengers and people
+    excursion/        Excursions and excursion types
+    database/         TypeORM configuration
+    common/           Shared validators and utilities
+  test/               End-to-end tests
+database/migrations/  Versioned SQL migrations
+docs/
+  requirements/       Business rules and use cases
+  domain/             Domain model and decisions
+  architecture/       ADRs and diagrams
+  changelog.md        Notable changes
+```
+
+## Running locally
+
+Requirements: Node.js (current LTS) and Docker.
+
+```bash
+cd backend
+
+# Start PostgreSQL
+docker compose up -d
+
+# Configure the connection string
+cp .env.example .env
+# DATABASE_URL="postgresql://ciso:ciso@localhost:5432/ciso_excursoes"
+
+# Apply the SQL migrations in database/migrations/ in order, then:
+npm install
+npm run start:dev
+```
+
+## Tests
+
+```bash
+cd backend
+npm run test       # unit tests
+npm run test:e2e   # end-to-end tests (uses .env.test and resets the database)
+npm run test:cov   # coverage
+```
 
 ## Status
 
-**Em fase de definição do domínio e requisitos.**
+Under active development. The `person` and `excursion` modules are implemented with REST endpoints for creating, listing, fetching and updating records. The remaining areas in the scope above are planned.
