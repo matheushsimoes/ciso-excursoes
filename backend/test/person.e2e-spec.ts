@@ -126,6 +126,10 @@ describe('Person (e2e)', () => {
       });
     });
 
+    it('should return 400 when the id is not a UUID', async () => {
+      await request(app.getHttpServer()).get('/persons/abc').expect(400);
+    });
+
     it('should return 404 when person does not exist', async () => {
       const response = await request(app.getHttpServer())
         .get('/persons/00000000-0000-0000-0000-000000000000')

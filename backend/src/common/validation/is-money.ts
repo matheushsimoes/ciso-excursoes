@@ -1,4 +1,3 @@
-// src/common/validation/is-money.ts
 import { applyDecorators } from '@nestjs/common';
 import { Matches } from 'class-validator';
 
