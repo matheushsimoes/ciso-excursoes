@@ -8,6 +8,7 @@ import { UpdateExcursionDto } from './dto/update-excursion.dto.js';
 import { ExcursionRepository } from './excursion.repository.js';
 import { Excursion } from './domain/excursion.js';
 import { randomUUID } from 'crypto';
+import { normalizeMoney } from '../common/money.js';
 
 @Injectable()
 export class ExcursionService {
@@ -25,7 +26,7 @@ export class ExcursionService {
       type: dto.type,
       startDate: dto.startDate,
       endDate: dto.endDate,
-      referencePrice: dto.referencePrice,
+      referencePrice: normalizeMoney(dto.referencePrice),
       status: 'DRAFT',
       createdAt: now,
       updatedAt: now,
@@ -66,7 +67,9 @@ export class ExcursionService {
       type: dto.type ?? excursion.type,
       startDate: startDate,
       endDate: endDate,
-      referencePrice: dto.referencePrice ?? excursion.referencePrice,
+      referencePrice: dto.referencePrice
+        ? normalizeMoney(dto.referencePrice)
+        : excursion.referencePrice,
       updatedAt: new Date(),
     };
 
