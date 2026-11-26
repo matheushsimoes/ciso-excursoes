@@ -10,6 +10,7 @@ import { AccommodationModule } from './accommodation/accommodation.module.js';
 import { ActivityModule } from './activity/activity.module.js';
 import { FinanceModule } from './finance/finance.module.js';
 import { ReportModule } from './report/report.module.js';
+import { HealthModule } from './health/health.module.js';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ReportModule } from './report/report.module.js';
     ActivityModule,
     FinanceModule,
     ReportModule,
+    HealthModule,
   ],
   providers: [
     {

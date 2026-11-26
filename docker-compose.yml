@@ -1,0 +1,39 @@
+# Whole application with one command:   docker compose up --build
+# Only the database (for npm run start:dev / tests):   docker compose up -d postgres
+name: ciso-excursoes
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: ciso-excursoes-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ciso_excursoes
+      POSTGRES_USER: ciso
+      POSTGRES_PASSWORD: ciso
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/docker/create-test-database.sql:/docker-entrypoint-initdb.d/01-create-test-database.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ciso -d ciso_excursoes"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    container_name: ciso-excursoes-app
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://ciso:ciso@postgres:5432/ciso_excursoes
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
