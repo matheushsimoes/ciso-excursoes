@@ -63,6 +63,43 @@ Toda excursão é criada com status `DRAFT`.
 
 O status não é alterado pela edição comum dos dados da excursão. A mudança de status é uma operação própria e segue as transições permitidas do ciclo de vida da excursão.
 
+Status possíveis:
+
+| Status | Significado |
+|---|---|
+| `DRAFT` | Em planejamento, ainda não divulgada |
+| `OPEN` | Aberta para vendas |
+| `CONFIRMED` | Confirmada, vai acontecer |
+| `IN_PROGRESS` | Em execução |
+| `FINISHED` | Finalizada |
+| `CANCELLED` | Cancelada |
+
+Transições permitidas:
+
+| De | Para |
+|---|---|
+| `DRAFT` | `OPEN`, `CANCELLED` |
+| `OPEN` | `CONFIRMED`, `CANCELLED` |
+| `CONFIRMED` | `IN_PROGRESS`, `CANCELLED` |
+| `IN_PROGRESS` | `FINISHED` |
+| `FINISHED` | nenhuma (status final) |
+| `CANCELLED` | nenhuma (status final) |
+
+Solicitar o status atual não é erro: a operação não altera a excursão (idempotência).
+
+Pontos em aberto, a confirmar com o responsável pelas excursões:
+
+* se uma excursão `OPEN` pode voltar para `DRAFT` (por exemplo, para retirá-la da divulgação);
+* se uma excursão `IN_PROGRESS` pode ser cancelada.
+
+Pré-condição aplicada: uma excursão `OVERNIGHT` só pode ir para `CONFIRMED` quando todos os participantes ativos têm quarto (RN22). Caso contrário, a mudança retorna `409 Conflict`.
+
+### RN56 — Excursão finalizada ou cancelada não pode ser editada
+
+Excursões com status final (`FINISHED` ou `CANCELLED`) não podem ter seus dados alterados (nome, destino, tipo, datas e preço de referência).
+
+Essas excursões representam histórico e devem permanecer como foram realizadas ou canceladas.
+
 ### RN08 — Valor contratado individual
 
 Cada participação possui seu próprio valor contratado.
@@ -390,3 +427,53 @@ Após a realização da excursão, o responsável deve conseguir verificar:
 O resultado financeiro deve ser calculado a partir das receitas e despesas registradas.
 
 Não deve ser necessário armazenar manualmente o lucro final.
+
+---
+
+# 11. Regras consolidadas na implementação
+
+Regras que surgiram ou foram detalhadas durante a implementação dos módulos de participação, transporte, hospedagem, atividades e financeiro.
+
+### RN57 — Valor combinado não pode ficar abaixo do que já foi pago
+
+O valor combinado de uma participação pode ser alterado (desconto, negociação), mas nunca para um valor menor que o total já pago (pagamentos menos devoluções). Para devolver dinheiro, registra-se uma devolução (RN59).
+
+### RN58 — Pagamento não pode exceder o saldo
+
+Um pagamento não pode ser maior que o saldo devedor do que ele paga: o pacote (valor combinado) ou a compra de ingresso (quantidade × preço vendido). Não existe crédito a favor do passageiro no MVP.
+
+### RN59 — Pagamentos não são editados nem apagados
+
+Um pagamento registrado é histórico. Para corrigir um valor errado ou devolver dinheiro, registra-se uma devolução vinculada ao pagamento. A soma das devoluções de um pagamento nunca passa do valor do pagamento.
+
+### RN60 — Pagamento registrado uma única vez
+
+Cada tentativa de pagamento carrega uma chave de idempotência (cabeçalho `Idempotency-Key`). Se a mesma requisição chegar duas vezes (clique duplo, conexão instável), o segundo envio devolve o pagamento já registrado em vez de criar outro. A mesma chave com dados diferentes é rejeitada.
+
+### RN61 — Excursão cancelada não recebe pagamentos
+
+Depois que uma excursão é cancelada, não são aceitos novos pagamentos. Devoluções continuam permitidas, para acertar com os passageiros.
+
+### RN62 — Pagamento de pacote exige participação ativa
+
+Uma participação cancelada não recebe pagamentos de pacote. Pagamentos de ingresso continuam aceitos, porque ingressos não são cancelados (RN36).
+
+### RN63 — Cancelamento libera ônibus, poltrona e quarto
+
+Ao cancelar uma participação, a pessoa sai do ônibus, da poltrona e do quarto, que ficam livres para outro passageiro. Os pagamentos continuam registrados: o que não for devolvido aparece no financeiro como valor retido de cancelamentos (RN44).
+
+### RN64 — Excursão bate-volta não tem hotel
+
+Não é possível vincular hotel a uma excursão `DAY_TRIP`, nem mudar para `DAY_TRIP` uma excursão que já tem hotel vinculado.
+
+### RN65 — Estrutura só é removida vazia
+
+Um quarto só pode ser excluído sem hóspedes; um hotel só pode ser desvinculado sem quartos; a quantidade de ônibus só pode ser reduzida (ou o ônibus removido) quando os veículos retirados estão vazios; a capacidade de um tipo de ônibus não pode ficar abaixo da ocupação atual.
+
+### RN66 — Despesas podem ser lançadas a qualquer momento
+
+Despesas podem ser lançadas, corrigidas ou excluídas mesmo depois de a excursão ser finalizada, porque contas costumam chegar depois da viagem. Despesas são custo operacional e não se confundem com pagamentos de passageiros.
+
+### RN67 — Custos conhecidos não são despesas automáticas
+
+O custo dos quartos e o custo dos ingressos comprados de fornecedores são mostrados para planejamento, mas só entram no resultado financeiro quando lançados como despesa. Isso evita contar o mesmo custo duas vezes.

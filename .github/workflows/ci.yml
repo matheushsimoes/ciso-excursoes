@@ -46,11 +46,6 @@ jobs:
       - run: npm run build
       - run: npm test
 
-      - name: Apply database migrations
-        run: |
-          for file in ../database/migrations/*.sql; do
-            echo "Applying $file"
-            psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$file"
-          done
+      - run: npm run migrate
 
-      - run: npm run test:e2e
+      - run: npm run test:e2e

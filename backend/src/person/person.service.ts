@@ -49,7 +49,11 @@ export class PersonService {
     return person;
   }
 
-  async findAll(): Promise<Person[]> {
+  async findAll(search?: string): Promise<Person[]> {
+    const term = search?.trim();
+    if (term) {
+      return this.personRepository.search(term);
+    }
     return this.personRepository.findAll();
   }
 

@@ -38,6 +38,26 @@ export class TypeOrmExcursionRepository implements ExcursionRepository {
     return this.toDomain(savedEntity);
   }
 
+  async countActiveParticipantsWithoutRoom(excursionId: string): Promise<number> {
+    const [row] = await this.repository.query(
+      `SELECT count(*)::int AS total
+         FROM participation
+        WHERE excursion_id = $1
+          AND status = 'ACTIVE'
+          AND room_id IS NULL`,
+      [excursionId],
+    );
+    return row.total;
+  }
+
+  async countHotels(excursionId: string): Promise<number> {
+    const [row] = await this.repository.query(
+      'SELECT count(*)::int AS total FROM excursion_hotel WHERE excursion_id = $1',
+      [excursionId],
+    );
+    return row.total;
+  }
+
   private toEntity(excursion: Excursion): ExcursionEntity {
     return this.repository.create({
       id: excursion.id,

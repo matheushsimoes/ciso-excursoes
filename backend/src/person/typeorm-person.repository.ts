@@ -39,6 +39,18 @@ export class TypeOrmPersonRepository implements PersonRepository {
     return entities.map((entity) => this.toDomain(entity));
   }
 
+  async search(term: string): Promise<Person[]> {
+    const pattern = `%${term.toLowerCase().replace(/[\\%_]/g, '\\$&')}%`;
+    const entities = await this.repository
+      .createQueryBuilder('person')
+      .where('lower(person.fullName) LIKE :pattern', { pattern })
+      .orWhere('person.document LIKE :pattern', { pattern })
+      .orderBy('person.fullName', 'ASC')
+      .limit(50)
+      .getMany();
+    return entities.map((entity) => this.toDomain(entity));
+  }
+
   async update(person: Person): Promise<Person> {
     const savedEntity = await this.repository.save(this.toEntity(person));
     return this.toDomain(savedEntity);

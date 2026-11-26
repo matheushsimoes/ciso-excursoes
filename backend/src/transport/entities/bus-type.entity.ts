@@ -1,0 +1,22 @@
+import { Column, Entity, PrimaryColumn } from 'typeorm';
+
+@Entity({ name: 'bus_type' })
+export class BusTypeEntity {
+  @PrimaryColumn('uuid')
+  id: string;
+
+  @Column({ name: 'name', type: 'varchar', length: 100 })
+  name: string;
+
+  @Column({ name: 'capacity', type: 'integer' })
+  capacity: number;
+
+  @Column({ name: 'description', type: 'varchar', length: 255, nullable: true })
+  description: string | null;
+
+  @Column({ name: 'created_at', type: 'timestamptz' })
+  createdAt: Date;
+
+  @Column({ name: 'updated_at', type: 'timestamptz' })
+  updatedAt: Date;
+}

@@ -95,6 +95,19 @@ describe('Person (e2e)', () => {
     });
   });
 
+  describe('GET /persons?search=', () => {
+    it('should find people by part of the name, ignoring case, or by document', async () => {
+      await createPerson({ fullName: 'Maria da Silva', document: '11111111111' });
+      await createPerson({ fullName: 'João Souza', document: '22222222222' });
+
+      const byName = await request(app.getHttpServer()).get('/persons?search=SILVA').expect(200);
+      const byDocument = await request(app.getHttpServer()).get('/persons?search=2222').expect(200);
+
+      expect(byName.body.map((p: { fullName: string }) => p.fullName)).toEqual(['Maria da Silva']);
+      expect(byDocument.body.map((p: { fullName: string }) => p.fullName)).toEqual(['João Souza']);
+    });
+  });
+
   describe('GET /persons/:id', () => {
     it('should return a person by id', async () => {
       const createResponse = await request(app.getHttpServer())

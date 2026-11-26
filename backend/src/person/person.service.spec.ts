@@ -15,6 +15,7 @@ describe('PersonService', () => {
       findByDocument: jest.fn(),
       findById: jest.fn(),
       findAll: jest.fn(),
+      search: jest.fn(),
       update: jest.fn(),
     };
 
@@ -139,6 +140,15 @@ describe('PersonService', () => {
   });
 
   describe('findAll', () => {
+    it('should search by name or document when a term is given', async () => {
+      repository.search.mockResolvedValue([]);
+
+      await service.findAll('  silva ');
+
+      expect(repository.search).toHaveBeenCalledWith('silva');
+      expect(repository.findAll).not.toHaveBeenCalled();
+    });
+
     it('should return all persons', async () => {
       const persons: Person[] = [
         {

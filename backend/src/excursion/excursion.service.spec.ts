@@ -1,4 +1,8 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { jest } from '@jest/globals';
 
 import { ExcursionService } from './excursion.service.js';
@@ -28,6 +32,8 @@ describe('ExcursionService', () => {
       findById: jest.fn(),
       findAll: jest.fn(),
       update: jest.fn(),
+      countActiveParticipantsWithoutRoom: jest.fn(),
+      countHotels: jest.fn(),
     };
     repository.create.mockImplementation(async (e) => e);
     repository.update.mockImplementation(async (e) => e);
@@ -60,9 +66,9 @@ describe('ExcursionService', () => {
     });
 
     it('should normalize the reference price', async () => {
-        const result = await service.create({ ...dto, referencePrice: '250' });
+      const result = await service.create({ ...dto, referencePrice: '250' });
 
-        expect(result.referencePrice).toBe('250.00');
+      expect(result.referencePrice).toBe('250.00');
     });
 
     it('should accept a single-day excursion', async () => {
@@ -93,6 +99,14 @@ describe('ExcursionService', () => {
   });
 
   describe('update', () => {
+    it('should not turn an excursion with hotels into a day trip', async () => {
+      repository.countHotels.mockResolvedValue(1);
+
+      await expect(
+        service.update(existingExcursion.id, { type: 'DAY_TRIP' }),
+      ).rejects.toThrow(ConflictException);
+    });
+
     it('should update the given fields and keep the others', async () => {
       const result = await service.update(existingExcursion.id, {
         name: 'Rio 2027 - Carnaval',
@@ -121,6 +135,90 @@ describe('ExcursionService', () => {
       });
 
       expect(result.status).toBe('DRAFT');
+    });
+
+    it('should throw ConflictException if the excursion is in a final status', async () => {
+      repository.findById.mockResolvedValue({
+        ...existingExcursion,
+        status: 'FINISHED',
+      });
+
+      await expect(
+        service.update(existingExcursion.id, { name: 'Novo nome' }),
+      ).rejects.toThrow(ConflictException);
+
+      expect(repository.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('changeStatus', () => {
+    it('should not confirm an overnight excursion with participants without a room (RN22)', async () => {
+      repository.findById.mockResolvedValue({ ...existingExcursion, status: 'OPEN' });
+      repository.countActiveParticipantsWithoutRoom.mockResolvedValue(2);
+
+      await expect(
+        service.changeStatus(existingExcursion.id, { status: 'CONFIRMED' }),
+      ).rejects.toThrow(ConflictException);
+      expect(repository.update).not.toHaveBeenCalled();
+    });
+
+    it('should confirm an overnight excursion when every participant has a room', async () => {
+      repository.findById.mockResolvedValue({ ...existingExcursion, status: 'OPEN' });
+      repository.countActiveParticipantsWithoutRoom.mockResolvedValue(0);
+
+      const result = await service.changeStatus(existingExcursion.id, {
+        status: 'CONFIRMED',
+      });
+
+      expect(result.status).toBe('CONFIRMED');
+    });
+
+    it('should not check rooms when confirming a day trip', async () => {
+      repository.findById.mockResolvedValue({
+        ...existingExcursion,
+        type: 'DAY_TRIP',
+        status: 'OPEN',
+      });
+
+      await service.changeStatus(existingExcursion.id, { status: 'CONFIRMED' });
+
+      expect(repository.countActiveParticipantsWithoutRoom).not.toHaveBeenCalled();
+    });
+
+    it('should change the status of the excursion', async () => {
+      const result = await service.changeStatus(existingExcursion.id, {
+        status: 'OPEN',
+      });
+
+      expect(result.status).toBe('OPEN');
+      expect(repository.update).toHaveBeenCalledWith({
+        ...existingExcursion,
+        status: 'OPEN',
+        updatedAt: expect.any(Date),
+      });
+    });
+
+    it('should not change the status if it is the same', async () => {
+      const result = await service.changeStatus(existingExcursion.id, {
+        status: 'DRAFT',
+      });
+
+      expect(result.status).toBe('DRAFT');
+      expect(repository.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw ConflictException if the transition is invalid', async () => {
+      await expect(
+        service.changeStatus(existingExcursion.id, { status: 'FINISHED' }),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('should throw NotFoundException if the excursion does not exist', async () => {
+      repository.findById.mockResolvedValue(null);
+
+      await expect(
+        service.changeStatus('missing-id', { status: 'OPEN' }),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });

@@ -10,6 +10,7 @@ import {
   Post,
   Patch,
   ParseUUIDPipe,
+  Query,
 } from '@nestjs/common';
 
 @Controller('persons')
@@ -27,8 +28,8 @@ export class PersonController {
   }
 
   @Get()
-  async findAll(): Promise<Person[]> {
-    return this.personService.findAll();
+  async findAll(@Query('search') search?: string): Promise<Person[]> {
+    return this.personService.findAll(search);
   }
 
   @Patch(':id')
