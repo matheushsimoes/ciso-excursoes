@@ -138,3 +138,18 @@ Foi decidido que o backend utilizará ESM de forma consistente (ADR 0001). O Nes
 * Criadas a RN54 (tipo da excursão) e a RN55 (status inicial e mudança de status).
 * Registrada a DD16 (tipo da excursão) e complementada a DD13.
 * Valores monetários representados como string decimal na aplicação (ADR 0003).
+
+## 2026-10-20 - Módulo de excursões e integração contínua
+
+* Criado o módulo `Excursion` com cadastro, consulta, listagem e edição (UC01, UC02).
+* Preço de referência normalizado com duas casas decimais em todas as respostas.
+* Criado o script `database/scripts/reset-local-db.sh`, que recria um banco local a partir das migrations.
+* Criado o workflow de CI no GitHub Actions: lint, typecheck, build, testes unitários e testes e2e com o banco montado apenas pelas migrations.
+* Corrigido o banco de teste local, que estava divergente das migrations (faltavam `created_at` e `updated_at` em `excursion`).
+
+## 2026-10-21 - Ciclo de vida da excursão
+
+* Implementada a mudança de status da excursão (UC03) em `PATCH /excursions/:id/status`.
+* RN55 detalhada com os status, as transições permitidas e os pontos em aberto.
+* Criada a RN56: excursões `FINISHED` ou `CANCELLED` não podem ser editadas.
+* Transição não permitida retorna `409 Conflict`; solicitar o status atual é idempotente.

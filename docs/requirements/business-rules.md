@@ -63,6 +63,43 @@ Toda excursão é criada com status `DRAFT`.
 
 O status não é alterado pela edição comum dos dados da excursão. A mudança de status é uma operação própria e segue as transições permitidas do ciclo de vida da excursão.
 
+Status possíveis:
+
+| Status | Significado |
+|---|---|
+| `DRAFT` | Em planejamento, ainda não divulgada |
+| `OPEN` | Aberta para vendas |
+| `CONFIRMED` | Confirmada, vai acontecer |
+| `IN_PROGRESS` | Em execução |
+| `FINISHED` | Finalizada |
+| `CANCELLED` | Cancelada |
+
+Transições permitidas:
+
+| De | Para |
+|---|---|
+| `DRAFT` | `OPEN`, `CANCELLED` |
+| `OPEN` | `CONFIRMED`, `CANCELLED` |
+| `CONFIRMED` | `IN_PROGRESS`, `CANCELLED` |
+| `IN_PROGRESS` | `FINISHED` |
+| `FINISHED` | nenhuma (status final) |
+| `CANCELLED` | nenhuma (status final) |
+
+Solicitar o status atual não é erro: a operação não altera a excursão (idempotência).
+
+Pontos em aberto, a confirmar com o responsável pelas excursões:
+
+* se uma excursão `OPEN` pode voltar para `DRAFT` (por exemplo, para retirá-la da divulgação);
+* se uma excursão `IN_PROGRESS` pode ser cancelada.
+
+Pré-condições de negócio para algumas transições (por exemplo, todos os participantes de uma excursão `OVERNIGHT` com acomodação antes de `CONFIRMED`, conforme a RN22) serão aplicadas quando o módulo de participações existir.
+
+### RN56 — Excursão finalizada ou cancelada não pode ser editada
+
+Excursões com status final (`FINISHED` ou `CANCELLED`) não podem ter seus dados alterados (nome, destino, tipo, datas e preço de referência).
+
+Essas excursões representam histórico e devem permanecer como foram realizadas ou canceladas.
+
 ### RN08 — Valor contratado individual
 
 Cada participação possui seu próprio valor contratado.

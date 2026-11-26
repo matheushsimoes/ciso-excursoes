@@ -92,16 +92,43 @@ Alterações não podem comprometer informações históricas já registradas.
 
 Permitir que o responsável acompanhe o ciclo de vida da excursão.
 
-### Situações inicialmente previstas
+### Situações
 
-* Planejamento;
-* Aberta para vendas;
-* Confirmada;
-* Em execução;
-* Finalizada;
-* Cancelada.
+| Situação | Status |
+|---|---|
+| Planejamento | `DRAFT` |
+| Aberta para vendas | `OPEN` |
+| Confirmada | `CONFIRMED` |
+| Em execução | `IN_PROGRESS` |
+| Finalizada | `FINISHED` |
+| Cancelada | `CANCELLED` |
 
-> Os nomes e transições definitivos serão validados durante a modelagem do domínio.
+As transições permitidas estão definidas na RN55.
+
+### Fluxo principal
+
+1. O responsável seleciona a excursão.
+2. O responsável informa o novo status.
+3. O sistema verifica se a transição é permitida a partir do status atual.
+4. O sistema registra o novo status.
+
+### Fluxos alternativos
+
+* **Mesmo status atual:** o sistema não altera a excursão e retorna o estado atual.
+* **Transição não permitida:** o sistema recusa a alteração e informa o status atual e o solicitado.
+* **Excursão inexistente:** o sistema informa que a excursão não foi encontrada.
+
+### Implementação
+
+`PATCH /excursions/:id/status`
+
+| Situação | Resposta |
+|---|---|
+| Transição permitida | `200` |
+| Mesmo status atual | `200`, sem alteração |
+| Transição não permitida | `409 Conflict` |
+| Status inexistente | `400 Bad Request` |
+| Excursão inexistente | `404 Not Found` |
 
 ---
 
