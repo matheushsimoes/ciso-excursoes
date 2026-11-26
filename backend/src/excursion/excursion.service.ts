@@ -56,12 +56,39 @@ export class ExcursionService {
     return this.excursionRepository.findAll();
   }
 
+  /**
+   * Returns the excursion only if its operational data can still change
+   * (participants, transport, accommodation, activities). Finished or cancelled
+   * excursions are history (RN56).
+   */
+  async findEditable(id: string): Promise<Excursion> {
+    const excursion = await this.findById(id);
+
+    if (isFinalStatus(excursion.status)) {
+      throw new ConflictException(
+        `Excursion is ${excursion.status} and can no longer be changed`,
+      );
+    }
+
+    return excursion;
+  }
+
   async update(id: string, dto: UpdateExcursionDto): Promise<Excursion> {
     const excursion = await this.findById(id);
 
     if (isFinalStatus(excursion.status)) {
       throw new ConflictException(
         `Cannot edit an excursion with status ${excursion.status}`,
+      );
+    }
+
+    if (
+      dto.type === 'DAY_TRIP' &&
+      excursion.type !== 'DAY_TRIP' &&
+      (await this.excursionRepository.countHotels(id)) > 0
+    ) {
+      throw new ConflictException(
+        'Remove the hotels of this excursion before changing it to a day trip',
       );
     }
 
@@ -99,6 +126,17 @@ export class ExcursionService {
       throw new ConflictException(
         `Cannot change excursion status from ${excursion.status} to ${dto.status}`,
       );
+    }
+
+    if (dto.status === 'CONFIRMED' && excursion.type === 'OVERNIGHT') {
+      const withoutRoom =
+        await this.excursionRepository.countActiveParticipantsWithoutRoom(id);
+
+      if (withoutRoom > 0) {
+        throw new ConflictException(
+          `Cannot confirm the excursion: ${withoutRoom} active participant(s) without a room (RN22)`,
+        );
+      }
     }
 
     return this.excursionRepository.update({

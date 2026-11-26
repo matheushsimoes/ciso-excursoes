@@ -17,5 +17,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       useClass: TypeOrmExcursionRepository,
     },
   ],
+  exports: [ExcursionService],
 })
 export class ExcursionModule {}

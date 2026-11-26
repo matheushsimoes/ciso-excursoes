@@ -17,5 +17,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       useClass: TypeOrmPersonRepository,
     },
   ],
+  exports: [PersonService],
 })
 export class PersonModule {}

@@ -5,4 +5,8 @@ export abstract class ExcursionRepository {
   abstract findById(id: string): Promise<Excursion | null>;
   abstract findAll(): Promise<Excursion[]>;
   abstract update(excursion: Excursion): Promise<Excursion>;
+  /** Active participants of an excursion that have no room assigned (RN22). */
+  abstract countActiveParticipantsWithoutRoom(excursionId: string): Promise<number>;
+  /** Hotels linked to an excursion. */
+  abstract countHotels(excursionId: string): Promise<number>;
 }

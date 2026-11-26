@@ -5,5 +5,6 @@ export abstract class PersonRepository {
   abstract findByDocument(document: string): Promise<Person | null>;
   abstract findById(id: string): Promise<Person | null>;
   abstract findAll(): Promise<Person[]>;
+  abstract search(term: string): Promise<Person[]>;
   abstract update(person: Person): Promise<Person>;
 }
