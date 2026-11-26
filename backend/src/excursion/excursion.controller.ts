@@ -11,6 +11,7 @@ import { ExcursionService } from './excursion.service.js';
 import { CreateExcursionDto } from './dto/create-excursion.dto.js';
 import { UpdateExcursionDto } from './dto/update-excursion.dto.js';
 import { Excursion } from './domain/excursion.js';
+import { ChangeExcursionStatusDto } from './dto/change-excursion-status.dto.js';
 
 @Controller('excursions')
 export class ExcursionController {
@@ -37,5 +38,13 @@ export class ExcursionController {
     @Body() dto: UpdateExcursionDto,
   ): Promise<Excursion> {
     return this.excursionService.update(id, dto);
+  }
+
+  @Patch(':id/status')
+  async changeStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ChangeExcursionStatusDto,
+  ): Promise<Excursion> {
+    return this.excursionService.changeStatus(id, dto);
   }
 }

@@ -1,4 +1,8 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { jest } from '@jest/globals';
 
 import { ExcursionService } from './excursion.service.js';
@@ -60,9 +64,9 @@ describe('ExcursionService', () => {
     });
 
     it('should normalize the reference price', async () => {
-        const result = await service.create({ ...dto, referencePrice: '250' });
+      const result = await service.create({ ...dto, referencePrice: '250' });
 
-        expect(result.referencePrice).toBe('250.00');
+      expect(result.referencePrice).toBe('250.00');
     });
 
     it('should accept a single-day excursion', async () => {
@@ -121,6 +125,57 @@ describe('ExcursionService', () => {
       });
 
       expect(result.status).toBe('DRAFT');
+    });
+
+    it('should throw ConflictException if the excursion is in a final status', async () => {
+      repository.findById.mockResolvedValue({
+        ...existingExcursion,
+        status: 'FINISHED',
+      });
+
+      await expect(
+        service.update(existingExcursion.id, { name: 'Novo nome' }),
+      ).rejects.toThrow(ConflictException);
+
+      expect(repository.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('changeStatus', () => {
+    it('should change the status of the excursion', async () => {
+      const result = await service.changeStatus(existingExcursion.id, {
+        status: 'OPEN',
+      });
+
+      expect(result.status).toBe('OPEN');
+      expect(repository.update).toHaveBeenCalledWith({
+        ...existingExcursion,
+        status: 'OPEN',
+        updatedAt: expect.any(Date),
+      });
+    });
+
+    it('should not change the status if it is the same', async () => {
+      const result = await service.changeStatus(existingExcursion.id, {
+        status: 'DRAFT',
+      });
+
+      expect(result.status).toBe('DRAFT');
+      expect(repository.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw ConflictException if the transition is invalid', async () => {
+      await expect(
+        service.changeStatus(existingExcursion.id, { status: 'FINISHED' }),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('should throw NotFoundException if the excursion does not exist', async () => {
+      repository.findById.mockResolvedValue(null);
+
+      await expect(
+        service.changeStatus('missing-id', { status: 'OPEN' }),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });
