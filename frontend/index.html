@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0E6B4C">
+  <title>Ciso Excursões</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230E6B4C'/%3E%3Crect x='12' y='16' width='40' height='26' rx='6' fill='none' stroke='white' stroke-width='4'/%3E%3Ccircle cx='22' cy='46' r='4' fill='white'/%3E%3Ccircle cx='42' cy='46' r='4' fill='white'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Pular para o conteúdo</a>
+  <div class="shell">
+    <aside class="sidebar" aria-label="Navegação principal">
+      <a class="brand" href="#/">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 40 40" width="40" height="40"><rect x="5" y="7" width="30" height="21" rx="5" fill="none" stroke="currentColor" stroke-width="3"/><path d="M5 18h30" stroke="currentColor" stroke-width="3"/><circle cx="13" cy="31" r="3.2" fill="currentColor"/><circle cx="27" cy="31" r="3.2" fill="currentColor"/></svg>
+        </span>
+        <span class="brand-name">Ciso<br>Excursões</span>
+      </a>
+      <nav class="nav">
+        <a href="#/" data-nav="dashboard">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+          <span>Painel</span>
+        </a>
+        <a href="#/excursoes" data-nav="excursions">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1v2h-2v-2H9v2H7v-2H6a2 2 0 0 1-2-2zm2 0v5h12V6zm2 7.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3m8 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3"/></svg>
+          <span>Excursões</span>
+        </a>
+        <a href="#/pessoas" data-nav="persons">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8m-7 9a7 7 0 0 1 14 0v1H2zm15.5-9a3.5 3.5 0 1 0 0-7v7m1 2.1A6 6 0 0 1 22 19v2h-4v-1a8.9 8.9 0 0 0-1.6-5.1z"/></svg>
+          <span>Pessoas</span>
+        </a>
+        <a href="#/cadastros" data-nav="catalog">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zm9 0h7v7h-7zM4 13h7v7H4zm9 0h7v7h-7z"/></svg>
+          <span>Cadastros</span>
+        </a>
+      </nav>
+    </aside>
+    <main id="main" class="main" tabindex="-1"></main>
+  </div>
+  <div class="toasts" role="status" aria-live="polite"></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

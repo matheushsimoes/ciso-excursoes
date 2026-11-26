@@ -74,4 +74,23 @@ describe('Reports (e2e)', () => {
     });
     expect(response.body.excursions.map((e: { name: string }) => e.name)).toEqual(['Aberta', 'Antiga']);
   });
+
+  it('should count ticket sales on the dashboard the same way as the financial summary', async () => {
+    const excursion = await a.excursion();
+    const participation = await a.participation(excursion.id, { contractedAmount: '1000.00' });
+    const ticketType = await a.ticketType(excursion.id, { currentPrice: '120.00' });
+    const purchase = await a
+      .http()
+      .post(`/participations/${participation.id}/ticket-purchases`)
+      .send({ ticketTypeId: ticketType.id, quantity: 2 })
+      .expect(201);
+    await a.pay({ ticketPurchaseId: purchase.body.id, amount: '100.00' }).expect(201);
+
+    const dashboard = await a.http().get('/dashboard').expect(200);
+    const summary = await a.http().get(`/excursions/${excursion.id}/financial-summary`).expect(200);
+
+    expect(dashboard.body.totals.receivable).toBe('1140.00');
+    expect(dashboard.body.totals.netReceived).toBe('100.00');
+    expect(dashboard.body.excursions[0].receivable).toBe(summary.body.cash.receivable);
+  });
 });

@@ -152,15 +152,25 @@ export class ReportService {
               fin.net_received::text AS net_received, fin.receivable::text AS receivable
          FROM excursion e
          LEFT JOIN LATERAL (
+           -- Same rules as the excursion financial summary: package and ticket
+           -- payments both count, so the home screen and the excursion agree.
            SELECT coalesce(sum(x.paid - x.refunded), 0) AS net_received,
-                  coalesce(sum(greatest(x.contracted - (x.paid - x.refunded), 0))
-                           FILTER (WHERE x.status = 'ACTIVE'), 0) AS receivable
+                  coalesce(sum(greatest(x.due - (x.paid - x.refunded), 0))
+                           FILTER (WHERE x.counts_as_due), 0) AS receivable
              FROM (
-               SELECT p.status, p.contracted_amount AS contracted,
+               SELECT p.status = 'ACTIVE' AS counts_as_due, p.contracted_amount AS due,
                       coalesce((SELECT sum(amount) FROM payment WHERE participation_id = p.id), 0) AS paid,
                       coalesce((SELECT sum(rf.amount) FROM refund rf JOIN payment pm ON pm.id = rf.payment_id
                                  WHERE pm.participation_id = p.id), 0) AS refunded
                  FROM participation p WHERE p.excursion_id = e.id
+               UNION ALL
+               SELECT true, tp.quantity * tp.sold_price,
+                      coalesce((SELECT sum(amount) FROM payment WHERE ticket_purchase_id = tp.id), 0),
+                      coalesce((SELECT sum(rf.amount) FROM refund rf JOIN payment pm ON pm.id = rf.payment_id
+                                 WHERE pm.ticket_purchase_id = tp.id), 0)
+                 FROM ticket_purchase tp
+                 JOIN participation p ON p.id = tp.participation_id
+                WHERE p.excursion_id = e.id
              ) x
          ) fin ON true
         ORDER BY (e.status IN ('FINISHED', 'CANCELLED')) ASC, e.start_date ASC`,
