@@ -16,7 +16,7 @@ export interface Participation {
   updatedAt: Date;
 }
 
-export type PaymentSituation = 'PAID' | 'PARTIAL' | 'PENDING' | 'CANCELLED';
+export type PaymentSituation = 'COURTESY' | 'PAID' | 'PARTIAL' | 'PENDING' | 'CANCELLED';
 
 /**
  * Participation enriched with what the screens need to show: who the person

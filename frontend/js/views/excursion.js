@@ -887,7 +887,7 @@ async function reportsTab(section, excursion, context) {
   if (!context.isCurrent()) return;
 
   const active = participations.filter((p) => p.status === 'ACTIVE');
-  const pending = active.filter((p) => p.financial.situation !== 'PAID');
+  const pending = active.filter((p) => Number(p.financial.balance) > 0);
 
   section.innerHTML = html`
     <section class="panel">

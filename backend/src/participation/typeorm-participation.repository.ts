@@ -188,7 +188,7 @@ export class TypeOrmParticipationRepository implements ParticipationRepository {
         refunded: fromCents(refundedCents),
         netPaid: fromCents(netPaidCents),
         balance: fromCents(balanceCents),
-        situation: active ? paymentSituation(balanceCents, netPaidCents) : 'CANCELLED',
+        situation: active ? paymentSituation(toCents(row.contracted_amount), balanceCents, netPaidCents) : 'CANCELLED',
       },
     };
   }

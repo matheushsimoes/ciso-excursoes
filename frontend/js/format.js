@@ -76,6 +76,7 @@ export const NEXT_STATUS = {
 export const EXCURSION_TYPE = { DAY_TRIP: 'Bate-volta', OVERNIGHT: 'Com hospedagem' };
 
 export const SITUATION = {
+  COURTESY: { label: 'Cortesia', tone: 'grey' },
   PAID: { label: 'Quitado', tone: 'green' },
   PARTIAL: { label: 'Pagando', tone: 'yellow' },
   PENDING: { label: 'Sem pagamento', tone: 'red' },

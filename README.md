@@ -137,9 +137,13 @@ Export the "HOTEL GERAL" sheet as CSV (`;` separator) to `backend/data/` — a f
 
 ```bash
 cd backend
-node scripts/import-hotel-sheet.mjs scripts/imports/rio-2027.json data/rio-2027.csv --dry-run   # preview
-node scripts/import-hotel-sheet.mjs scripts/imports/rio-2027.json data/rio-2027.csv
+node scripts/import-hotel-sheet.mjs scripts/imports/rio-2027.json data/rio-2027.csv \
+  --payments data/rio-2027-pgtos.csv --dry-run   # preview
+node scripts/import-hotel-sheet.mjs scripts/imports/rio-2027.json data/rio-2027.csv \
+  --payments data/rio-2027-pgtos.csv
 ```
+
+`--payments` reads the "PGTOS" sheet (also exported as CSV): "TOTAL A PAGAR" becomes the contracted amount (empty, 0 or "-" means courtesy) and each monthly value becomes a payment on day 1 of that month. The script compares each balance with the "FALTA" column at the end.
 
 The configuration file holds the excursion, buses, hotel, room costs, package price per room type, courtesy rooms and activities. The script prints warnings for data to review (future birth dates, invalid e-mails, incomplete CEPs).
 

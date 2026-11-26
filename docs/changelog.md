@@ -190,4 +190,6 @@ Foi decidido que o backend utilizará ESM de forma consistente (ADR 0001). O Nes
 * Ficha da pessoa, lista de pessoas e relatório de passageiros (inclusive o CSV do seguro) mostram os novos dados.
 * Script `scripts/import-hotel-sheet.mjs`: importa uma excursão a partir da planilha "HOTEL GERAL" exportada em CSV (pessoas, quartos por grupo, valor do pacote pelo tipo de quarto, cortesias, quem vai "só ônibus"), pela API. Configuração por excursão em `scripts/imports/*.json`.
 * Planilhas com dados pessoais ficam em `backend/data/`, ignorada pelo git: o repositório é público.
+* Opção `--payments` no script de importação: lê a aba "PGTOS", usa o "TOTAL A PAGAR" como valor combinado (vazio, 0 ou "-" é cortesia) e lança cada valor mensal como pagamento no dia 1 do mês, com chave de idempotência fixa (rodar de novo não duplica). No fim, compara o saldo de cada passageiro com a coluna "FALTA".
+* Nova situação de pagamento `COURTESY` ("Cortesia") para quem viaja com valor combinado zero.
 

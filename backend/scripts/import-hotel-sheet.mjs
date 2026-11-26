@@ -13,7 +13,15 @@
  * (ignored by git) and never commit it: the repository is public.
  *
  * Usage (with the application running):
- *   node scripts/import-hotel-sheet.mjs scripts/imports/rio-2027.json data/rio-2027.csv [--dry-run]
+ *   node scripts/import-hotel-sheet.mjs scripts/imports/rio-2027.json data/rio-2027.csv \
+ *     [--payments data/rio-2027-pgtos.csv] [--dry-run]
+ *
+ * --payments reads the "PGTOS" sheet (one column per month, "TOTAL A PAGAR",
+ * "FALTA"): the contracted amount becomes "TOTAL A PAGAR" (empty, 0 or "-"
+ * means courtesy, R$ 0,00) and each monthly value becomes a payment on day 1
+ * of that month. Payments use a deterministic Idempotency-Key, so running
+ * the import again never duplicates them. At the end, the balance of each
+ * passenger is compared with the "FALTA" column.
  *
  * The package price depends on the room type (config.packagePrices: SGL,
  * DBL, TWIN, TPL). Courtesy rooms (config.courtesyRoomGroups, or "CORTESIA"
@@ -31,6 +39,7 @@ const flag = (name) => {
 const dryRun = args.includes('--dry-run');
 if (dryRun) args.splice(args.indexOf('--dry-run'), 1);
 const priceArgument = flag('--price');
+const paymentsPath = flag('--payments');
 const [configPath, csvPath] = args;
 if (!configPath || !csvPath) {
   console.error('Usage: node scripts/import-hotel-sheet.mjs <config.json> <sheet.csv> [--price 2500.00] [--dry-run]');
@@ -155,6 +164,62 @@ function parseSheet(text) {
   return groups;
 }
 
+const normalizeName = (text) =>
+  (text ?? '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toUpperCase();
+
+/** "1.690,00", "R$ 272,5", "-", "" → cents (integer) or null when empty. */
+function parseBrazilianMoney(raw) {
+  const text = (raw ?? '').replace(/R\$/g, '').replace(/\s/g, '');
+  if (!text || text === '-') return null;
+  const normalized = text.includes(',') ? text.replace(/\./g, '').replace(',', '.') : text;
+  const value = Number(normalized);
+  if (Number.isNaN(value)) throw new Error(`Valor inválido: "${raw}"`);
+  return Math.round(value * 100);
+}
+const centsToMoney = (cents) => (cents / 100).toFixed(2);
+
+const MONTHS = ['JANEIRO', 'FEVEREIRO', 'MARCO', 'ABRIL', 'MAIO', 'JUNHO', 'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO'];
+
+/** Payments sheet: name → { totalCents, missingCents, payments: [{ month, cents }] }. */
+function parsePaymentsSheet(text) {
+  const rows = text.split(/\r?\n/).map((line) => line.split(';'));
+  const headerIndex = rows.findIndex((row) => normalizeName(row[2]) === 'NOME' && row.some((cell) => normalizeName(cell) === 'TOTAL A PAGAR'));
+  if (headerIndex === -1) throw new Error('Cabeçalho da aba de pagamentos (NOME ... TOTAL A PAGAR) não encontrado.');
+  const header = rows[headerIndex].map(normalizeName);
+  const monthColumns = header
+    .map((cell, index) => ({ month: MONTHS.indexOf(cell), index }))
+    .filter(({ month }) => month !== -1);
+  const totalColumn = header.indexOf('TOTAL A PAGAR');
+  const missingColumn = header.indexOf('FALTA');
+
+  const byName = new Map();
+  for (const row of rows.slice(headerIndex + 1)) {
+    if (!(row[0] ?? '').trim()) break; // totals line closes the first block
+    const name = normalizeName(row[2]);
+    if (!name) continue; // reserved places without a passenger yet
+    byName.set(name, {
+      totalCents: parseBrazilianMoney(row[totalColumn]) ?? 0,
+      missingCents: missingColumn === -1 ? null : parseBrazilianMoney(row[missingColumn]),
+      payments: monthColumns
+        .map(({ month, index }) => ({ month, cents: parseBrazilianMoney(row[index]) ?? 0 }))
+        .filter(({ cents }) => cents > 0),
+    });
+  }
+  return byName;
+}
+
+/** The month's day 1, in the year that puts it on or before the departure. */
+function paymentDate(month, startDate) {
+  const [year, startMonth] = startDate.split('-').map(Number);
+  const paymentYear = month + 1 <= startMonth ? year : year - 1;
+  return `${paymentYear}-${String(month + 1).padStart(2, '0')}-01`;
+}
+
 function toPerson(row) {
   const name = titleCase(row[2]);
   const person = {
@@ -218,13 +283,30 @@ if (!referencePrice || !/^\d{1,10}(\.\d{1,2})?$/.test(referencePrice)) {
   process.exit(1);
 }
 const courtesy = new Set(config.courtesyRoomGroups ?? []);
+const paymentsByName = paymentsPath ? parsePaymentsSheet(decode(await readFile(paymentsPath))) : null;
+const paymentMethod = config.paymentMethod ?? 'PIX';
+const importKey = (config.importKey ?? config.excursion.name).toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+/** Contracted amount: payments sheet first, then the price of the room type. */
+function contractedFor(row, group, isCourtesy) {
+  if (paymentsByName) {
+    const entry = paymentsByName.get(normalizeName(row[2]));
+    if (entry) return centsToMoney(entry.totalCents);
+    warn(`${titleCase(row[2])}: não está na aba de pagamentos; valor pelo tipo de quarto.`);
+  }
+  return isCourtesy ? '0.00' : (config.packagePrices?.[group.type] ?? referencePrice);
+}
 
 const people = groups.flatMap((group) =>
   [...group.people, ...group.busOnly].map((row) => ({ group, person: toPerson(row) })),
 );
 for (const group of groups) {
   for (const row of group.busOnly) {
-    warn(`${titleCase(row[2])}: só ônibus, sem quarto; entra com o valor do quarto da família. Confira o valor combinado.`);
+    warn(
+      paymentsPath
+        ? `${titleCase(row[2])}: só ônibus, sem quarto.`
+        : `${titleCase(row[2])}: só ônibus, sem quarto; entra com o valor do quarto da família. Confira o valor combinado.`,
+    );
   }
 }
 const documents = new Map();
@@ -246,6 +328,14 @@ console.log(`${people.length} pessoas em ${groups.length} quartos.`);
 if (dryRun) {
   for (const group of groups) {
     console.log(`  ${group.number.padStart(2, '0')} ${group.type}${courtesy.has(group.number) || group.courtesy ? ' (cortesia)' : ''}: ${group.people.map((row) => titleCase(row[2])).join(', ')}`);
+  }
+  if (paymentsByName) {
+    const entries = [...paymentsByName.values()];
+    const paid = entries.reduce((sum, entry) => sum + entry.payments.reduce((total, p) => total + p.cents, 0), 0);
+    const total = entries.reduce((sum, entry) => sum + entry.totalCents, 0);
+    console.log(`Aba de pagamentos: ${entries.length} pessoas, total a pagar ${centsToMoney(total)}, pago ${centsToMoney(paid)}.`);
+    const sheetNames = new Set(people.map(({ person }) => normalizeName(person.fullName)));
+    for (const [name] of paymentsByName) if (!sheetNames.has(name)) warn(`Pagamentos de "${name}": pessoa não encontrada na aba do hotel.`);
   }
   warnings.forEach((message) => console.log(`! ${message}`));
   process.exit(0);
@@ -271,6 +361,41 @@ const hotel = knownHotel ?? (await post('/hotels', config.hotel));
 const overview = await post(`/excursions/${excursion.id}/hotels`, { hotelId: hotel.id });
 const link = overview.hotels.find((entry) => (entry.hotelId ?? entry.hotel?.id) === hotel.id);
 
+
+let paymentCount = 0;
+async function importPayments(participation, person) {
+  const entry = paymentsByName?.get(normalizeName(person.fullName));
+  if (!entry) return;
+  let remaining = Math.round(Number(participation.contractedAmount) * 100);
+  for (const { month, cents } of entry.payments) {
+    // The system does not accept paying more than is owed (RN58).
+    const amount = Math.min(cents, remaining);
+    if (amount < cents) {
+      warn(`${person.fullName}: pagou ${centsToMoney(cents - amount)} a mais do que o combinado; o excedente não foi lançado (registre devolução ou ajuste o valor).`);
+    }
+    if (amount <= 0) continue;
+    const response = await fetch(`${base}/payments`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Idempotency-Key': `import:${importKey}:${person.document}:${month + 1}`,
+      },
+      body: JSON.stringify({
+        participationId: participation.id,
+        amount: centsToMoney(amount),
+        method: paymentMethod,
+        paymentDate: paymentDate(month, config.excursion.startDate),
+      }),
+    });
+    if (!response.ok) throw new Error(`Pagamento de ${person.fullName}: ${response.status} ${await response.text()}`);
+    remaining -= amount;
+    paymentCount += 1;
+  }
+  if (entry.missingCents !== null && Math.max(entry.missingCents, 0) !== remaining) {
+    warn(`${person.fullName}: falta ${centsToMoney(remaining)} no sistema e ${centsToMoney(entry.missingCents)} na planilha.`);
+  }
+}
+
 let createdPeople = 0;
 for (const group of groups) {
   const isCourtesy = courtesy.has(group.number) || group.courtesy;
@@ -284,9 +409,10 @@ for (const group of groups) {
     if (created) createdPeople += 1;
     const participation = await post(`/excursions/${excursion.id}/participations`, {
       personId: person.id,
-      contractedAmount: isCourtesy ? '0.00' : (config.packagePrices?.[group.type] ?? referencePrice),
+      contractedAmount: contractedFor(row, group, isCourtesy),
     });
     if (!isBusOnly(row)) await patch(`/participations/${participation.id}/room`, { roomId: room.id });
+    await importPayments(participation, person);
   }
 }
 for (const room of config.extraRooms ?? []) {
@@ -296,7 +422,7 @@ for (const activity of config.activities ?? []) {
   await post(`/excursions/${excursion.id}/activities`, activity);
 }
 
-console.log(`Excursão "${excursion.name}" importada: ${people.length} passageiros (${createdPeople} pessoas novas), ${groups.length + (config.extraRooms?.length ?? 0)} quartos.`);
+console.log(`Excursão "${excursion.name}" importada: ${people.length} passageiros (${createdPeople} pessoas novas), ${groups.length + (config.extraRooms?.length ?? 0)} quartos, ${paymentCount} pagamentos.`);
 if (warnings.size) {
   console.log(`\nConfira na tela (${warnings.size} avisos):`);
   warnings.forEach((message) => console.log(`! ${message}`));
