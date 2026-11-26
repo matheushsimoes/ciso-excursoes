@@ -887,3 +887,53 @@ Este documento descreve comportamentos do sistema.
 Ele **não define diretamente as tabelas ou entidades do banco de dados**.
 
 O modelo de domínio será definido posteriormente a partir dos conceitos necessários para suportar estes casos de uso.
+
+---
+
+# 17. Implementação
+
+Onde cada caso de uso do MVP está disponível na API e na interface web. Na interface, `/#/...` indica a rota da tela.
+
+| Caso de uso | API | Tela |
+| --- | --- | --- |
+| UC01 Criar excursão | `POST /excursions` | Excursões → Nova excursão |
+| UC02 Editar excursão | `PATCH /excursions/:id` | Excursão → Editar dados |
+| UC03 Alterar situação | `PATCH /excursions/:id/status` | Excursão → Resumo |
+| UC04 Cadastrar pessoa | `POST /persons` | Pessoas → Nova pessoa |
+| UC05 Editar pessoa | `PATCH /persons/:id` | Pessoa → Editar |
+| UC06 Consultar pessoa | `GET /persons/:id`, `GET /persons?search=` | Pessoas (busca por nome ou documento) |
+| UC07 Histórico da pessoa | `GET /persons/:personId/participations` | Pessoa |
+| UC08 Adicionar pessoa à excursão | `POST /excursions/:excursionId/participations` | Excursão → Passageiros → Adicionar passageiro |
+| UC09 Alterar valor contratado | `PATCH /participations/:id/contracted-amount` | Passageiro → Alterar valor combinado |
+| UC10 Consultar participação | `GET /participations/:id` | `/#/participacoes/:id` |
+| UC11 Tipo de ônibus | `POST/GET/PATCH /bus-types` | Cadastros → Tipos de ônibus |
+| UC12–UC13 Ônibus da excursão | `POST /excursions/:excursionId/buses`, `PATCH/DELETE /excursion-buses/:id` | Excursão → Transporte |
+| UC14–UC16 Ônibus e poltrona | `PATCH /participations/:id/transport` | Transporte (clique na poltrona) ou Passageiro |
+| UC17 Mapa de assentos | `GET /excursion-vehicles/:id/seats` | Excursão → Transporte |
+| UC18 Cadastrar hotel | `POST/GET/PATCH /hotels` | Cadastros → Hotéis |
+| UC19 Hotel na excursão | `POST /excursions/:excursionId/hotels`, `DELETE /excursion-hotels/:id` | Excursão → Hospedagem |
+| UC20–UC21 Quartos | `POST /excursion-hotels/:id/rooms`, `PATCH/DELETE /rooms/:id` | Excursão → Hospedagem |
+| UC22–UC23 Acomodação | `PATCH /participations/:id/room` | Hospedagem (Colocar hóspede) ou Passageiro |
+| UC24 Ocupação dos quartos | `GET /excursions/:excursionId/accommodation` | Excursão → Hospedagem |
+| UC25–UC26 Atividades | `POST/GET /excursions/:excursionId/activities`, `PATCH /activities/:id` | Excursão → Atividades e ingressos |
+| UC27–UC28 Tipos de ingresso | `POST /activities/:id/ticket-types`, `PATCH /ticket-types/:id` | Excursão → Atividades e ingressos |
+| UC29 Compra pelo participante | `POST/GET /participations/:id/ticket-purchases`, `POST /ticket-purchases/:id/confirm` | Passageiro → Vender ingresso |
+| UC30 Demanda de ingressos | `GET /excursions/:excursionId/ticket-demand` | Atividades e ingressos → Quantos ingressos comprar |
+| UC31 Compra com fornecedor | `POST /ticket-types/:id/supplier-purchases`, `GET /excursions/:excursionId/supplier-purchases`, `/suppliers` | Atividades e ingressos → Registrar compra |
+| UC32 Registrar pagamento | `POST /payments` (cabeçalho `Idempotency-Key`) | Passageiro → Registrar pagamento |
+| UC33 Pagamentos do participante | `GET /participations/:id/statement` | Passageiro → Pagamentos e devoluções |
+| UC34 / UC45 Situação e resultado financeiro | `GET /excursions/:excursionId/financial-summary` | Excursão → Financeiro |
+| UC35 Cancelar participação | `POST /participations/:id/cancel` | Passageiro → Cancelar participação |
+| UC36 Registrar reembolso | `POST /payments/:id/refunds` | Passageiro → Devolver |
+| UC37 Substituir participante | `POST /participations/:id/replace` | Passageiro → Substituir passageiro |
+| UC38–UC39 Despesas | `POST/GET /excursions/:excursionId/expenses`, `PATCH/DELETE /expenses/:id` | Excursão → Financeiro → Despesas |
+| UC40 Lista de passageiros | `GET /excursions/:excursionId/reports/passengers` (`?format=csv`) | Excursão → Relatórios |
+| UC41 Ocupação de transporte | `GET /excursions/:excursionId/transport` | Excursão → Transporte |
+| UC42 Ocupação de hospedagem | `GET /excursions/:excursionId/accommodation` | Excursão → Hospedagem |
+| UC43 Situação de pagamentos | `GET /excursions/:excursionId/participations` | Passageiros; Relatórios → Quem ainda deve |
+| UC44 Ingressos | `GET /excursions/:excursionId/ticket-demand` | Excursão → Atividades e ingressos |
+| Painel inicial | `GET /dashboard` | Painel |
+
+O UC47 (exportar dados para seguro) foi antecipado de forma simples: a lista de passageiros pode ser baixada como planilha CSV (separador `;`, compatível com o Excel em português), com nome, documento, nascimento e idade na data de ida.
+
+`GET /health` informa se a aplicação está no ar e conectada ao banco.

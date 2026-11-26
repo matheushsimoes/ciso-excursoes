@@ -19,28 +19,63 @@ The system is designed to manage:
 - Expenses and financial results
 - Operational reports
 
+## What it does
+
+| Area | Highlights |
+| --- | --- |
+| Dashboard | Money still to receive, upcoming departures with seats sold |
+| Excursions | Day trips and overnight trips, status lifecycle (draft → open → confirmed → in progress → finished, or cancelled) |
+| Passengers | Individual price per passenger, cancellation, replacement, full history per person |
+| Transport | Bus types, several buses per trip, interactive seat map |
+| Accommodation | Hotels and rooms per trip, occupancy, rooms that block confirmation when someone has no bed |
+| Activities | Ticket types with frozen sale price, demand vs. tickets bought from suppliers |
+| Finance | Payments with idempotency keys, refunds, expenses, realized and projected result |
+| Reports | Passenger list with age at departure, CSV export for travel insurance, who still owes |
+
+The interface is in Portuguese, responsive (phone and desktop) and printable.
+
 ## Tech stack
 
 | Layer | Technology |
 | --- | --- |
 | Language | TypeScript (ES modules) |
-| Backend | Node.js, NestJS |
+| Backend | Node.js 24, NestJS 12 |
 | Database | PostgreSQL 16, TypeORM, versioned SQL migrations |
+| Frontend | Plain HTML, CSS and ES modules served by the API (no build step) |
 | Validation | class-validator, class-transformer |
-| Testing | Jest (unit), Supertest (end-to-end against a real database) |
-| Tooling | Docker Compose, oxlint, Prettier |
+| Testing | Jest (unit), Supertest (end-to-end against a real database, including concurrency tests) |
+| Tooling | Docker, Docker Compose, GitHub Actions, oxlint, Prettier |
 
 ## Architecture
 
-The application is a **modular monolith**: each business area (for example `person` and `excursion`) is a self-contained NestJS module with its own domain logic, DTOs, entities, service and controller. Persistence sits behind a repository interface with a TypeORM implementation, so domain rules do not depend on the ORM.
+The application is a **modular monolith**. Each business area is a self-contained NestJS module with its own domain rules, DTOs, entities, repository, service and controller:
 
-The monolith can be split later if real needs for scale or module independence appear, without paying the cost of distributed systems up front.
+```
+person ─┐
+excursion ─┼─ participation ─┬─ transport
+           │                 ├─ accommodation
+           │                 ├─ activity
+           │                 └─ finance ── report
+```
 
-Key design decisions are recorded as ADRs in [`docs/architecture/decisions/`](docs/architecture/decisions/), including:
+- **Domain rules are pure functions** (for example `assertCanPay`, `assertCanAssignTransport`) with unit tests that need no database.
+- **Repository per module**: an abstract class is the injection token; the TypeORM implementation uses raw SQL where it is clearer (views, aggregates).
+- **Concurrency-safe rules**: capacity, seat, balance and refund checks run inside a transaction after a row lock (`SELECT ... FOR UPDATE`).
+- **Money** is a decimal string in the API and integer cents in calculations. **Business dates** are `YYYY-MM-DD` strings.
+- **Payments are append-only**: corrections are refunds; duplicates are prevented with the `Idempotency-Key` header.
+- Balances and financial results are **always calculated**, never stored.
 
-- [ESM module system](docs/architecture/decisions/0001-esm-module-system.md)
-- [Business dates stored as strings](docs/architecture/decisions/0002-business-dates-as-strings.md), to avoid time zone drift
-- [Money as decimal strings](docs/architecture/decisions/0003-money-as-decimal-strings.md), to avoid floating-point rounding errors
+Decisions are recorded as ADRs in [`docs/architecture/decisions/`](docs/architecture/decisions/):
+
+| ADR | Decision |
+| --- | --- |
+| [0001](docs/architecture/decisions/0001-esm-module-system.md) | ESM module system |
+| [0002](docs/architecture/decisions/0002-business-dates-as-strings.md) | Business dates as strings |
+| [0003](docs/architecture/decisions/0003-money-as-decimal-strings.md) | Money as decimal strings |
+| [0004](docs/architecture/decisions/0004-row-locks-for-capacity-and-balances.md) | Row locks for capacity and balance rules |
+| [0005](docs/architecture/decisions/0005-immutable-payments-and-idempotency-keys.md) | Immutable payments and idempotency keys |
+| [0006](docs/architecture/decisions/0006-static-frontend-served-by-the-api.md) | Static frontend served by the API |
+| [0007](docs/architecture/decisions/0007-sql-migrations-with-a-minimal-runner.md) | SQL migrations with a minimal runner |
 
 ## Engineering principles
 
@@ -51,49 +86,105 @@ Key design decisions are recorded as ADRs in [`docs/architecture/decisions/`](do
 ## Project structure
 
 ```
-backend/              NestJS application
+backend/                 NestJS application
   src/
-    person/           Passengers and people
-    excursion/        Excursions and excursion types
-    database/         TypeORM configuration
-    common/           Shared validators and utilities
-  test/               End-to-end tests
-database/migrations/  Versioned SQL migrations
+    person/ excursion/ participation/ transport/
+    accommodation/ activity/ finance/ report/
+    health/              GET /health (database connectivity)
+    common/              Money, database errors, validators
+  scripts/
+    migrate.mjs          Applies pending SQL migrations
+    seed-demo.mjs        Creates demo data through the API
+  test/                  End-to-end tests
+frontend/                Web interface (served by the API)
+database/
+  migrations/            Versioned SQL migrations
+  docker/                PostgreSQL init script (test database)
+  scripts/               Local database reset
 docs/
-  requirements/       Business rules and use cases
-  domain/             Domain model and decisions
-  architecture/       ADRs and diagrams
-  changelog.md        Notable changes
+  requirements/          Business rules and use cases
+  domain/                Domain model and decisions
+  architecture/          ADRs and diagrams
+  changelog.md           Notable changes
+Dockerfile               Production image (migrations run on start)
+docker-compose.yml       PostgreSQL + app
 ```
 
-## Running locally
+## Running
 
-Requirements: Node.js (current LTS) and Docker.
+### Everything with Docker
+
+Requirements: Docker.
 
 ```bash
+docker compose up --build
+```
+
+Open http://localhost:3000. Migrations are applied automatically when the app starts.
+
+To load demo data (two excursions, twelve people, payments, rooms and tickets) into an empty database:
+
+```bash
+docker compose exec app node scripts/seed-demo.mjs
+```
+
+### Development
+
+Requirements: Node.js 24 and Docker.
+
+```bash
+# PostgreSQL only
+docker compose up -d postgres
+
 cd backend
-
-# Start PostgreSQL
-docker compose up -d
-
-# Configure the connection string
 cp .env.example .env
 # DATABASE_URL="postgresql://ciso:ciso@localhost:5432/ciso_excursoes"
 
-# Apply the SQL migrations in database/migrations/ in order, then:
 npm install
-npm run start:dev
+npm run migrate
+npm run start:dev      # http://localhost:3000
+npm run seed:demo      # optional, in another terminal
 ```
 
 ## Tests
 
+The PostgreSQL container creates the `ciso_excursoes_test` database the first time its volume is created.
+
 ```bash
 cd backend
+DATABASE_URL=postgresql://ciso:ciso@localhost:5432/ciso_excursoes_test npm run migrate
+
+npm run typecheck
 npm run test       # unit tests
-npm run test:e2e   # end-to-end tests (uses .env.test and resets the database)
+npm run test:e2e   # end-to-end tests (uses .env.test and resets the data between tests)
 npm run test:cov   # coverage
 ```
 
+CI runs lint, typecheck, build, unit tests, migrations and end-to-end tests on every push.
+
+## API overview
+
+All endpoints return JSON. Validation errors return `400`, missing records `404`, broken business rules `409`.
+
+| Resource | Endpoints |
+| --- | --- |
+| People | `GET/POST /persons`, `GET/PATCH /persons/:id`, `GET /persons/:id/participations` |
+| Excursions | `GET/POST /excursions`, `GET/PATCH /excursions/:id`, `PATCH /excursions/:id/status` |
+| Participations | `GET/POST /excursions/:id/participations`, `GET /participations/:id`, `PATCH .../contracted-amount`, `POST .../cancel`, `POST .../replace` |
+| Transport | `/bus-types`, `GET /excursions/:id/transport`, `POST /excursions/:id/buses`, `PATCH/DELETE /excursion-buses/:id`, `GET /excursion-vehicles/:id/seats`, `PATCH /participations/:id/transport` |
+| Accommodation | `/hotels`, `GET /excursions/:id/accommodation`, `POST /excursions/:id/hotels`, `POST /excursion-hotels/:id/rooms`, `PATCH/DELETE /rooms/:id`, `PATCH /participations/:id/room` |
+| Activities | `/excursions/:id/activities`, `/activities/:id/ticket-types`, `/participations/:id/ticket-purchases`, `GET /excursions/:id/ticket-demand`, `/suppliers`, `/ticket-types/:id/supplier-purchases` |
+| Finance | `POST /payments` (`Idempotency-Key` header), `POST /payments/:id/refunds`, `GET /participations/:id/statement`, `/excursions/:id/expenses`, `GET /excursions/:id/financial-summary` |
+| Reports | `GET /dashboard`, `GET /excursions/:id/reports/passengers?format=csv` |
+| Health | `GET /health` |
+
+The full mapping from use cases to endpoints and screens is in [`docs/requirements/use-cases.md`](docs/requirements/use-cases.md#17-implementação).
+
 ## Status
 
-Under active development. The `person` and `excursion` modules are implemented with REST endpoints for creating, listing, fetching and updating records. The remaining areas in the scope above are planned.
+All MVP use cases are implemented. Planned next steps:
+
+- **Authentication** before exposing the app on the internet.
+- **Deployment on AWS** (container + managed PostgreSQL), with backups.
+- **Observability**: structured logs and request metrics.
+- Online payments and a participant portal (UC48, UC49).
