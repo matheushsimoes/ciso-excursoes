@@ -69,6 +69,45 @@ describe('Person (e2e)', () => {
       });
     });
 
+    it('should store nickname, RG and address, and clear them with an empty string', async () => {
+      const created = await request(app.getHttpServer())
+        .post('/persons')
+        .send({
+          fullName: 'Joana Prado',
+          nickname: 'Jojo',
+          document: '111.222.333-44',
+          birthDate: '1970-01-01',
+          rg: '12.345.678-9',
+          rgIssuer: 'SSP/SP',
+          address: 'Rua das Flores 10',
+          neighborhood: 'Centro',
+          city: 'Santos',
+          state: 'sp',
+          postalCode: '11000-000',
+        })
+        .expect(201);
+
+      expect(created.body).toMatchObject({ nickname: 'Jojo', rg: '12.345.678-9', state: 'SP', postalCode: '11000-000' });
+
+      const found = await request(app.getHttpServer()).get('/persons?search=joj').expect(200);
+      expect(found.body.map((p: { nickname: string }) => p.nickname)).toEqual(['Jojo']);
+
+      const updated = await request(app.getHttpServer())
+        .patch(`/persons/${created.body.id}`)
+        .send({ nickname: '', postalCode: '' })
+        .expect(200);
+      expect(updated.body.nickname).toBeUndefined();
+      expect(updated.body.postalCode).toBeUndefined();
+      expect(updated.body.city).toBe('Santos');
+    });
+
+    it('should reject an invalid CEP', async () => {
+      await request(app.getHttpServer())
+        .post('/persons')
+        .send({ fullName: 'Ana', document: '1', birthDate: '1990-01-01', postalCode: '1335-140' })
+        .expect(400);
+    });
+
     it('should not create a person with an existing document', async () => {
       await request(app.getHttpServer())
         .post('/persons')

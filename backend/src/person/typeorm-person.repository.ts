@@ -45,6 +45,7 @@ export class TypeOrmPersonRepository implements PersonRepository {
       .createQueryBuilder('person')
       .where('lower(person.fullName) LIKE :pattern', { pattern })
       .orWhere('person.document LIKE :pattern', { pattern })
+      .orWhere('lower(person.nickname) LIKE :pattern', { pattern })
       .orderBy('person.fullName', 'ASC')
       .limit(50)
       .getMany();
@@ -64,6 +65,14 @@ export class TypeOrmPersonRepository implements PersonRepository {
       birthDate: person.birthDate,
       phone: person.phone ?? null,
       email: person.email ?? null,
+      nickname: person.nickname ?? null,
+      rg: person.rg ?? null,
+      rgIssuer: person.rgIssuer ?? null,
+      address: person.address ?? null,
+      neighborhood: person.neighborhood ?? null,
+      city: person.city ?? null,
+      state: person.state ?? null,
+      postalCode: person.postalCode ?? null,
       createdAt: person.createdAt,
       updatedAt: person.updatedAt,
     });
@@ -77,6 +86,14 @@ export class TypeOrmPersonRepository implements PersonRepository {
       birthDate: entity.birthDate,
       phone: entity.phone ?? undefined,
       email: entity.email ?? undefined,
+      nickname: entity.nickname ?? undefined,
+      rg: entity.rg ?? undefined,
+      rgIssuer: entity.rgIssuer ?? undefined,
+      address: entity.address ?? undefined,
+      neighborhood: entity.neighborhood ?? undefined,
+      city: entity.city ?? undefined,
+      state: entity.state ?? undefined,
+      postalCode: entity.postalCode ?? undefined,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
     };

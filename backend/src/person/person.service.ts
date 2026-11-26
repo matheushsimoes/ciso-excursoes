@@ -32,6 +32,14 @@ export class PersonService {
       birthDate: dto.birthDate,
       phone: dto.phone,
       email: dto.email,
+      nickname: optional(dto.nickname),
+      rg: optional(dto.rg),
+      rgIssuer: optional(dto.rgIssuer),
+      address: optional(dto.address),
+      neighborhood: optional(dto.neighborhood),
+      city: optional(dto.city),
+      state: optional(dto.state)?.toUpperCase(),
+      postalCode: optional(dto.postalCode),
       createdAt: now,
       updatedAt: now,
     };
@@ -75,9 +83,23 @@ export class PersonService {
       birthDate: dto.birthDate ?? person.birthDate,
       phone: dto.phone ?? person.phone,
       email: dto.email ?? person.email,
+      nickname: dto.nickname === undefined ? person.nickname : optional(dto.nickname),
+      rg: dto.rg === undefined ? person.rg : optional(dto.rg),
+      rgIssuer: dto.rgIssuer === undefined ? person.rgIssuer : optional(dto.rgIssuer),
+      address: dto.address === undefined ? person.address : optional(dto.address),
+      neighborhood: dto.neighborhood === undefined ? person.neighborhood : optional(dto.neighborhood),
+      city: dto.city === undefined ? person.city : optional(dto.city),
+      state: dto.state === undefined ? person.state : optional(dto.state)?.toUpperCase(),
+      postalCode: dto.postalCode === undefined ? person.postalCode : optional(dto.postalCode),
       updatedAt: new Date(),
     };
 
     return this.personRepository.update(updatedPerson);
   }
+}
+
+/** Optional text fields: trimmed, and an empty string means "no value". */
+function optional(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
 }

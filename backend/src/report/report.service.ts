@@ -10,7 +10,10 @@ import { toCsv } from './csv.js';
 export interface PassengerLine {
   participationId: string;
   fullName: string;
+  nickname: string | null;
   document: string;
+  rg: string | null;
+  rgIssuer: string | null;
   birthDate: string;
   ageAtDeparture: number;
   phone: string | null;
@@ -58,7 +61,8 @@ export class ReportService {
   async passengers(excursionId: string): Promise<PassengerLine[]> {
     const excursion = await this.excursionService.findById(excursionId);
     const rows: Array<Record<string, any>> = await this.dataSource.query(
-      `SELECT p.id, per.full_name, per.document, per.birth_date::text AS birth_date,
+      `SELECT p.id, per.full_name, per.nickname, per.document, per.rg, per.rg_issuer,
+              per.birth_date::text AS birth_date,
               per.phone, per.email, v.identifier AS vehicle, p.seat_number,
               h.name AS hotel, r.identifier AS room,
               (p.contracted_amount
@@ -79,7 +83,10 @@ export class ReportService {
     return rows.map((row) => ({
       participationId: row.id,
       fullName: row.full_name,
+      nickname: row.nickname,
       document: row.document,
+      rg: row.rg,
+      rgIssuer: row.rg_issuer,
       birthDate: row.birth_date,
       ageAtDeparture: ageOn(row.birth_date, excursion.startDate),
       phone: row.phone,
@@ -100,7 +107,9 @@ export class ReportService {
     const content = toCsv(
       [
         'Nome completo',
-        'Documento',
+        'CPF',
+        'RG',
+        'Órgão emissor',
         'Data de nascimento',
         'Idade na partida',
         'Telefone',
@@ -114,6 +123,8 @@ export class ReportService {
       lines.map((line) => [
         line.fullName,
         line.document,
+        line.rg,
+        line.rgIssuer,
         formatDate(line.birthDate),
         line.ageAtDeparture,
         line.phone,

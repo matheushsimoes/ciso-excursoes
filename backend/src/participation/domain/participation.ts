@@ -27,6 +27,7 @@ export interface ParticipationView extends Participation {
   person: {
     id: string;
     fullName: string;
+    nickname: string | null;
     document: string;
     birthDate: string;
     phone: string | null;

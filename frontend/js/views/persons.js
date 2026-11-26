@@ -5,16 +5,37 @@ import { pageHead } from './shared.js';
 
 function personFields(person = {}) {
   return html`
-    ${field({ name: 'fullName', label: 'Nome completo', value: person.fullName, required: true, attrs: 'maxlength="150" autocomplete="off"' })}
     <div class="row">
-      ${field({ name: 'document', label: 'Documento (CPF ou RG)', value: person.document, required: true, attrs: 'maxlength="20" autocomplete="off"' })}
+      ${field({ name: 'fullName', label: 'Nome completo', value: person.fullName, required: true, attrs: 'maxlength="150" autocomplete="off"' })}
+      ${field({ name: 'nickname', label: 'Apelido', value: person.nickname, attrs: 'maxlength="60" autocomplete="off"' })}
+    </div>
+    <div class="row">
+      ${field({ name: 'document', label: 'CPF', value: person.document, required: true, attrs: 'maxlength="20" autocomplete="off" inputmode="numeric"' })}
       ${field({ name: 'birthDate', label: 'Data de nascimento', type: 'date', value: person.birthDate, required: true, hint: 'Necessária para o seguro viagem.' })}
+    </div>
+    <div class="row">
+      ${field({ name: 'rg', label: 'RG', value: person.rg, attrs: 'maxlength="20" autocomplete="off"' })}
+      ${field({ name: 'rgIssuer', label: 'Órgão emissor', value: person.rgIssuer, attrs: 'maxlength="20" autocomplete="off" placeholder="SSP/SP"' })}
     </div>
     <div class="row">
       ${field({ name: 'phone', label: 'Telefone', value: person.phone, attrs: 'maxlength="20" inputmode="tel" autocomplete="off"' })}
       ${field({ name: 'email', label: 'E-mail', type: 'email', value: person.email, attrs: 'maxlength="254" autocomplete="off"' })}
-    </div>`;
+    </div>
+    <details class="address-fields" ${raw(person.address || person.city ? 'open' : '')}>
+      <summary>Endereço</summary>
+      ${field({ name: 'address', label: 'Rua, número e complemento', value: person.address, attrs: 'maxlength="200" autocomplete="off"' })}
+      <div class="row">
+        ${field({ name: 'neighborhood', label: 'Bairro', value: person.neighborhood, attrs: 'maxlength="100" autocomplete="off"' })}
+        ${field({ name: 'postalCode', label: 'CEP', value: person.postalCode, attrs: 'maxlength="9" inputmode="numeric" autocomplete="off" placeholder="11000-000"' })}
+      </div>
+      <div class="row">
+        ${field({ name: 'city', label: 'Cidade', value: person.city, attrs: 'maxlength="100" autocomplete="off"' })}
+        ${field({ name: 'state', label: 'UF', value: person.state, attrs: 'maxlength="2" autocomplete="off" placeholder="SP" style="text-transform:uppercase"' })}
+      </div>
+    </details>`;
 }
+
+const OPTIONAL_FIELDS = ['nickname', 'rg', 'rgIssuer', 'phone', 'email', 'address', 'neighborhood', 'postalCode', 'city', 'state'];
 
 function personBody(data, editing) {
   const body = {
@@ -22,10 +43,13 @@ function personBody(data, editing) {
     document: data.document.replace(/\s/g, ''),
     birthDate: data.birthDate,
   };
-  // Optional fields: omitted when empty on creation; kept unchanged when empty on edit.
-  if (data.phone) body.phone = data.phone.trim();
-  if (data.email) body.email = data.email.trim();
-  if (!editing) return body;
+  for (const name of OPTIONAL_FIELDS) {
+    const value = (data[name] ?? '').trim();
+    // New person: empty fields are simply omitted. Editing: an empty field
+    // clears the value (phone and e-mail are only replaced, never cleared).
+    if (value) body[name] = value;
+    else if (editing && !['phone', 'email'].includes(name)) body[name] = '';
+  }
   return body;
 }
 
@@ -56,7 +80,7 @@ export function choosePersonDialog({ title, exclude = new Set() }) {
       title,
       submitLabel: 'Cadastrar nova pessoa',
       body: html`
-        ${field({ name: 'search', label: 'Buscar por nome ou documento', attrs: 'autocomplete="off" placeholder="Digite pelo menos 2 letras"' })}
+        ${field({ name: 'search', label: 'Buscar por nome, apelido ou CPF', attrs: 'autocomplete="off" placeholder="Digite pelo menos 2 letras"' })}
         <div data-results class="stack" aria-live="polite"></div>`,
       onOpen(form) {
         const results = form.querySelector('[data-results]');
@@ -76,7 +100,7 @@ export function choosePersonDialog({ title, exclude = new Set() }) {
             const persons = await api.get(`/persons?search=${encodeURIComponent(term)}`);
             results.innerHTML = persons.length
               ? html`<div class="table-wrap"><table><tbody>${persons.map((p) => rhtml`
-                  <tr><td><strong>${p.fullName}</strong><br><span class="muted">${p.document}, nascido(a) em ${date(p.birthDate)}</span></td>
+                  <tr><td><strong>${p.fullName}</strong>${p.nickname ? ` (${p.nickname})` : ''}<br><span class="muted">${p.document}, nascido(a) em ${date(p.birthDate)}</span></td>
                   <td class="num">${exclude.has(p.id)
                     ? badge('Já está na excursão', 'grey')
                     : rhtml`<button type="button" class="small" data-pick="${p.id}">Escolher</button>`}</td></tr>`)}
@@ -115,19 +139,20 @@ export async function personsView(main, _params, { isCurrent, query }) {
       actions: html`<button type="button" data-new>Nova pessoa</button>`,
     }))}
     <form class="search" role="search" style="margin-bottom:1.25rem">
-      ${field({ name: 'busca', label: 'Buscar por nome ou documento', value: term, attrs: 'type="search" autocomplete="off"' })}
+      ${field({ name: 'busca', label: 'Buscar por nome, apelido ou CPF', value: term, attrs: 'type="search" autocomplete="off"' })}
     </form>
     <div class="panel">
       ${persons.length
         ? rhtml`<div class="table-wrap"><table class="responsive">
-            <thead><tr><th>Nome</th><th>Documento</th><th>Nascimento</th><th>Telefone</th></tr></thead>
+            <thead><tr><th>Nome</th><th>Apelido</th><th>CPF</th><th>Nascimento</th><th>Telefone</th></tr></thead>
             <tbody>${persons.map((p) => rhtml`<tr class="clickable" data-href="#/pessoas/${p.id}">
               <td class="primary" data-label="Nome"><a href="#/pessoas/${p.id}">${p.fullName}</a></td>
-              <td data-label="Documento">${p.document}</td>
+              <td data-label="Apelido">${p.nickname ?? '—'}</td>
+              <td data-label="CPF">${p.document}</td>
               <td data-label="Nascimento">${date(p.birthDate)}</td>
               <td data-label="Telefone">${p.phone ?? '—'}</td></tr>`)}</tbody></table></div>`
         : term
-          ? empty('Ninguém encontrado', `Nenhuma pessoa com "${term}" no nome ou documento.`)
+          ? empty('Ninguém encontrado', `Nenhuma pessoa com "${term}" no nome, apelido ou CPF.`)
           : empty('Nenhuma pessoa cadastrada', 'Cadastre os passageiros aqui ou direto na excursão.')}
     </div>`;
 
@@ -172,10 +197,13 @@ export async function personView(main, [id], { isCurrent, refresh }) {
       <section class="panel">
         <h2>Cadastro</h2>
         <dl class="kv" style="margin-top:.8rem">
-          <dt>Documento</dt><dd>${person.document}</dd>
+          ${person.nickname ? rhtml`<dt>Apelido</dt><dd>${person.nickname}</dd>` : ''}
+          <dt>CPF</dt><dd>${person.document}</dd>
+          <dt>RG</dt><dd>${person.rg ? `${person.rg}${person.rgIssuer ? ` (${person.rgIssuer})` : ''}` : '—'}</dd>
           <dt>Nascimento</dt><dd>${date(person.birthDate)}</dd>
           <dt>Telefone</dt><dd>${person.phone ?? '—'}</dd>
           <dt>E-mail</dt><dd>${person.email ?? '—'}</dd>
+          <dt>Endereço</dt><dd>${addressText(person) || '—'}</dd>
         </dl>
       </section>
       <section class="panel">
@@ -195,3 +223,9 @@ export async function personView(main, [id], { isCurrent, refresh }) {
   });
 }
 
+function addressText(person) {
+  const place = [person.city, person.state].filter(Boolean).join('/');
+  return [person.address, person.neighborhood, place, person.postalCode && `CEP ${person.postalCode}`]
+    .filter(Boolean)
+    .join(', ');
+}

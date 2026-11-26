@@ -379,6 +379,8 @@ dialog .dialog-foot { display: flex; justify-content: flex-end; gap: .5rem; padd
 .negative { color: var(--brake); }
 .loading { color: var(--asphalt-2); padding: 2rem 0; }
 .inline-list { display: flex; flex-wrap: wrap; gap: .4rem; }
+details.address-fields { border-top: 1px solid var(--line); padding-top: .75rem; }
+details.address-fields summary { cursor: pointer; font-weight: 700; margin-bottom: .75rem; }
 details.refunds summary { cursor: pointer; color: var(--sign-strong); font-weight: 700; }
 
 @media (prefers-reduced-motion: reduce) {

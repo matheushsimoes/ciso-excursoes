@@ -20,7 +20,7 @@ const VIEW_SQL = `
   SELECT p.id, p.person_id, p.excursion_id, p.contracted_amount::text AS contracted_amount,
          p.status, p.excursion_vehicle_id, p.seat_number, p.room_id,
          p.cancelled_at, p.cancellation_reason, p.created_at, p.updated_at,
-         per.full_name, per.document, per.birth_date::text AS birth_date, per.phone, per.email,
+         per.full_name, per.nickname, per.document, per.birth_date::text AS birth_date, per.phone, per.email,
          e.name AS excursion_name, e.status AS excursion_status, e.type AS excursion_type,
          v.identifier AS vehicle_identifier,
          r.identifier AS room_identifier, h.name AS hotel_name,
@@ -167,6 +167,7 @@ export class TypeOrmParticipationRepository implements ParticipationRepository {
       person: {
         id: row.person_id,
         fullName: row.full_name,
+        nickname: row.nickname,
         document: row.document,
         birthDate: row.birth_date,
         phone: row.phone,

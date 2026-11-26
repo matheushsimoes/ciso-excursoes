@@ -169,7 +169,7 @@ async function passengersTab(section, excursion, context) {
             <tbody>${participations.map((p) => {
               const situation = SITUATION[p.financial.situation];
               return rhtml`<tr class="clickable ${p.status === 'CANCELLED' ? 'cancelled' : ''}" data-href="#/participacoes/${p.id}">
-                <td class="primary" data-label="Nome"><a href="#/participacoes/${p.id}">${p.person.fullName}</a></td>
+                <td class="primary" data-label="Nome"><a href="#/participacoes/${p.id}">${p.person.fullName}</a>${p.person.nickname ? rhtml`<br><span class="muted">${p.person.nickname}</span>` : ''}</td>
                 <td data-label="Ônibus">${p.vehicleIdentifier ? `${p.vehicleIdentifier}${p.seatNumber ? `, poltrona ${p.seatNumber}` : ''}` : '—'}</td>
                 <td data-label="Quarto">${p.room ? `${p.room.identifier} (${p.room.hotelName})` : excursion.type === 'DAY_TRIP' ? 'Não se aplica' : '—'}</td>
                 <td class="num" data-label="Combinado">${money(p.contractedAmount)}</td>
@@ -903,10 +903,11 @@ async function reportsTab(section, excursion, context) {
       </div>
       ${passengers.length
         ? rhtml`<div class="table-wrap"><table class="responsive">
-            <thead><tr><th>Nome</th><th>Documento</th><th>Nascimento</th><th class="num">Idade</th><th>Telefone</th><th>Ônibus</th><th>Quarto</th></tr></thead>
+            <thead><tr><th>Nome</th><th>CPF</th><th>RG</th><th>Nascimento</th><th class="num">Idade</th><th>Telefone</th><th>Ônibus</th><th>Quarto</th></tr></thead>
             <tbody>${passengers.map((p) => rhtml`<tr>
               <td class="primary" data-label="Nome">${p.fullName}</td>
-              <td data-label="Documento">${p.document}</td>
+              <td data-label="CPF">${p.document}</td>
+              <td data-label="RG">${p.rg ? `${p.rg}${p.rgIssuer ? ` ${p.rgIssuer}` : ''}` : '—'}</td>
               <td data-label="Nascimento">${date(p.birthDate)}</td>
               <td class="num" data-label="Idade">${p.ageAtDeparture}</td>
               <td data-label="Telefone">${p.phone ?? '—'}</td>
