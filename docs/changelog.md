@@ -184,3 +184,10 @@ Foi decidido que o backend utilizará ESM de forma consistente (ADR 0001). O Nes
 * `docker-compose.yml` na raiz com PostgreSQL e aplicação (`docker compose up --build`). O arquivo `backend/docker-compose.yml` foi removido.
 * CI passa a aplicar as migrations com `npm run migrate`.
 
+## 2026-11-26 - Importação da planilha do hotel
+
+* Migration `006`: pessoa passa a ter apelido, RG, órgão emissor e endereço (rua, bairro, cidade, UF e CEP), todos opcionais. A busca de pessoas também procura pelo apelido.
+* Ficha da pessoa, lista de pessoas e relatório de passageiros (inclusive o CSV do seguro) mostram os novos dados.
+* Script `scripts/import-hotel-sheet.mjs`: importa uma excursão a partir da planilha "HOTEL GERAL" exportada em CSV (pessoas, quartos por grupo, valor do pacote pelo tipo de quarto, cortesias, quem vai "só ônibus"), pela API. Configuração por excursão em `scripts/imports/*.json`.
+* Planilhas com dados pessoais ficam em `backend/data/`, ignorada pelo git: o repositório é público.
+

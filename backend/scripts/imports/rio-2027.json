@@ -1,0 +1,51 @@
+{
+  "excursion": {
+    "name": "Rio de Janeiro - 2027",
+    "destination": "Rio de Janeiro, RJ",
+    "type": "OVERNIGHT",
+    "startDate": "2027-01-22",
+    "endDate": "2027-01-26",
+    "referencePrice": "1690.00"
+  },
+  "courtesyRoomGroups": [
+    "1"
+  ],
+  "buses": {
+    "busType": {
+      "name": "DD 64",
+      "capacity": 64,
+      "description": "Double-deck"
+    },
+    "quantity": 2
+  },
+  "hotel": {
+    "name": "Hotel Casa Nova",
+    "address": "R. Riachuelo, 105 - Centro - Lapa, Rio de Janeiro - RJ, 20230-010",
+    "phone": "(21) 3547-5241"
+  },
+  "roomCosts": {
+    "SGL": "1722.60",
+    "DBL": "1722.60",
+    "TWIN": "1722.60",
+    "TPL": "2412.12"
+  },
+  "extraRooms": [
+    {
+      "identifier": "Motoristas TWIN",
+      "capacity": 2,
+      "cost": "0.00"
+    }
+  ],
+  "activities": [
+    {
+      "name": "Quadra do Salgueiro",
+      "isOptional": true
+    }
+  ],
+  "packagePrices": {
+    "SGL": "2090.00",
+    "DBL": "1690.00",
+    "TWIN": "1690.00",
+    "TPL": "1635.00"
+  }
+}

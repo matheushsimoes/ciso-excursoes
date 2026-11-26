@@ -95,6 +95,9 @@ backend/                 NestJS application
   scripts/
     migrate.mjs          Applies pending SQL migrations
     seed-demo.mjs        Creates demo data through the API
+    import-hotel-sheet.mjs  Imports an excursion from the hotel spreadsheet (CSV)
+    imports/             Import configuration per excursion
+  data/                  Spreadsheets with personal data (ignored by git)
   test/                  End-to-end tests
 frontend/                Web interface (served by the API)
 database/
@@ -127,6 +130,18 @@ To load demo data (two excursions, twelve people, payments, rooms and tickets) i
 ```bash
 docker compose exec app node scripts/seed-demo.mjs
 ```
+
+### Importing an excursion from the hotel spreadsheet
+
+Export the "HOTEL GERAL" sheet as CSV (`;` separator) to `backend/data/` — a folder ignored by git, because the sheet has personal data — and run, with the app running:
+
+```bash
+cd backend
+node scripts/import-hotel-sheet.mjs scripts/imports/rio-2027.json data/rio-2027.csv --dry-run   # preview
+node scripts/import-hotel-sheet.mjs scripts/imports/rio-2027.json data/rio-2027.csv
+```
+
+The configuration file holds the excursion, buses, hotel, room costs, package price per room type, courtesy rooms and activities. The script prints warnings for data to review (future birth dates, invalid e-mails, incomplete CEPs).
 
 ### Development
 

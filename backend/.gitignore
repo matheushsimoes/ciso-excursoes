@@ -57,3 +57,7 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Spreadsheets with personal data (CPF, RG, addresses). Never commit them.
+/data/
+*.csv
